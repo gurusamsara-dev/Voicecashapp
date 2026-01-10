@@ -6,153 +6,281 @@
 <title>Voice Cash</title>
 
 <style>
-:root{
---bg:#0f0f14;--card:#1a1a26;--accent:#7c5cff;
---danger:#ff4d4d;--text:#fff;--muted:#9a9ab3
+:root {
+  --bg:#0f0f14;
+  --card:#1a1a26;
+  --accent:#7c5cff;
+  --danger:#ff4d4d;
+  --text:#fff;
+  --muted:#9a9ab3;
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui}
-.app{max-width:480px;margin:auto;padding:20px}
-h1{text-align:center}
-.summary{display:flex;justify-content:space-between;margin:12px 0}
-.box{background:var(--card);padding:12px;border-radius:12px;width:48%;text-align:center}
-.big{font-size:18px;color:var(--accent)}
-button{width:100%;padding:16px;font-size:18px;border-radius:16px;border:none;background:var(--accent);color:#fff}
-button.recording{background:var(--danger);animation:pulse 1.2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,77,77,.6)}70%{box-shadow:0 0 0 18px rgba(255,77,77,0)}}
-.status{text-align:center;color:var(--muted);margin:8px}
-.day{margin-top:18px}
-.day-header{display:flex;justify-content:space-between;color:var(--accent)}
-.record{background:var(--card);padding:12px;border-radius:12px;display:flex;justify-content:space-between;margin-top:6px}
-.time{font-size:12px;color:var(--muted)}
-.hidden{display:none}
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+.app {
+  max-width:480px;
+  margin:auto;
+  padding:20px;
+}
+
+h1 {
+  text-align:center;
+  margin:10px 0 6px;
+}
+
+.cards {
+  display:flex;
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.card {
+  flex:1;
+  background:var(--card);
+  padding:12px;
+  border-radius:14px;
+  text-align:center;
+}
+
+.card .label { color:var(--muted); font-size:14px; }
+.card .value { color:var(--accent); font-size:20px; margin-top:4px; }
+
+button {
+  width:100%;
+  padding:18px;
+  font-size:18px;
+  border-radius:18px;
+  border:none;
+  background:var(--accent);
+  color:white;
+  margin-bottom:10px;
+}
+
+button.recording {
+  background:var(--danger);
+  animation:pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow:0 0 0 0 rgba(255,77,77,.6); }
+  70% { box-shadow:0 0 0 18px rgba(255,77,77,0); }
+  100% { box-shadow:0 0 0 0 rgba(255,77,77,0); }
+}
+
+.status {
+  text-align:center;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.hidden { display:none; }
+
+.day {
+  margin-top:16px;
+}
+
+.day-header {
+  display:flex;
+  justify-content:space-between;
+  color:var(--accent);
+  margin-bottom:6px;
+}
+
+.record {
+  background:var(--card);
+  padding:12px;
+  border-radius:12px;
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:6px;
+}
+
+.time {
+  color:var(--muted);
+  font-size:13px;
+}
 </style>
 </head>
 
 <body>
 <div class="app">
-<h1>🎙 Voice Cash</h1>
 
-<div class="summary">
-<div class="box">
-<div>Сегодня</div>
-<div class="big" id="todaySum">0</div>
-</div>
-<div class="box">
-<div>Месяц</div>
-<div class="big" id="monthSum">0</div>
-</div>
-</div>
+  <h1>🎙 Voice Cash</h1>
 
-<button id="recBtn">🎤 Начать запись</button>
-<div class="status" id="status"></div>
+  <div class="cards">
+    <div class="card">
+      <div class="label">Сегодня</div>
+      <div class="value" id="todaySum">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Месяц</div>
+      <div class="value" id="monthSum">0</div>
+    </div>
+  </div>
 
-<button onclick="toggleAnalytics()">📊 Аналитика</button>
+  <button id="recBtn">🎤 Начать запись</button>
+  <button onclick="toggleAnalytics()">📊 Аналитика</button>
 
-<div id="archive"></div>
-<div id="analytics" class="hidden"></div>
+  <div class="status" id="status"></div>
+
+  <div id="archive"></div>
+  <div id="analytics" class="hidden"></div>
+
 </div>
 
 <script>
-let rec=false,recognition=null;
-let records=JSON.parse(localStorage.getItem('vc-records'))||[];
+/* ========= STATE ========= */
+let recognition = null;
+let isRecording = false;
+let analyticsOpen = false;
 
-const $=id=>document.getElementById(id);
-const today=()=>new Date().toISOString().slice(0,10);
-const month=()=>today().slice(0,7);
-const time=()=>new Date().toTimeString().slice(0,5);
+let records = JSON.parse(localStorage.getItem('vc-records')) || [];
 
-function label(date){
-const d=new Date(date),t=new Date(),y=new Date(Date.now()-86400000);
-if(d.toDateString()==t.toDateString())return"Сегодня";
-if(d.toDateString()==y.toDateString())return"Вчера";
-return date;
+/* ========= ELEMENTS ========= */
+const recBtn = document.getElementById('recBtn');
+const archiveEl = document.getElementById('archive');
+const analyticsEl = document.getElementById('analytics');
+const statusEl = document.getElementById('status');
+const todayEl = document.getElementById('todaySum');
+const monthEl = document.getElementById('monthSum');
+
+/* ========= HELPERS ========= */
+const today = () => new Date().toISOString().slice(0,10);
+const nowTime = () => new Date().toTimeString().slice(0,5);
+const month = () => today().slice(0,7);
+
+/* ========= RENDER ========= */
+function render() {
+  archiveEl.innerHTML = '';
+  analyticsEl.innerHTML = '';
+
+  let todaySum = 0;
+  let monthSum = 0;
+
+  const byDay = {};
+
+  records.forEach(r => {
+    if (r.date === today()) todaySum += r.amount;
+    if (r.date.startsWith(month())) monthSum += r.amount;
+
+    byDay[r.date] = byDay[r.date] || [];
+    byDay[r.date].push(r);
+  });
+
+  todayEl.textContent = todaySum;
+  monthEl.textContent = monthSum;
+
+  Object.keys(byDay).sort().reverse().forEach(date => {
+    const sum = byDay[date].reduce((s,r)=>s+r.amount,0);
+
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'day';
+
+    dayDiv.innerHTML = `
+      <div class="day-header">
+        <span>${date}</span>
+        <span>${sum}</span>
+      </div>
+    `;
+
+    byDay[date].forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'record';
+      row.innerHTML = `
+        <div>
+          <div>${r.item}</div>
+          <div class="time">${r.time}</div>
+        </div>
+        <div>${r.amount}</div>
+      `;
+      dayDiv.appendChild(row);
+    });
+
+    archiveEl.appendChild(dayDiv);
+  });
 }
 
-function render(){
-$('archive').innerHTML='';$('analytics').innerHTML='';
-let tSum=0,mSum=0,byDay={},byCat={};
+/* ========= ANALYTICS TOGGLE ========= */
+function toggleAnalytics() {
+  analyticsOpen = !analyticsOpen;
+  analyticsEl.classList.toggle('hidden', !analyticsOpen);
+  archiveEl.classList.toggle('hidden', analyticsOpen);
 
-records.forEach(r=>{
-if(r.date==today())tSum+=r.amount;
-if(r.date.startsWith(month()))mSum+=r.amount;
-byDay[r.date]=(byDay[r.date]||[]).concat(r);
-byCat[r.category]=(byCat[r.category]||0)+r.amount;
-});
+  if (analyticsOpen) {
+    analyticsEl.innerHTML = `
+      <div class="day-header">
+        <span>Записей</span>
+        <span>${records.length}</span>
+      </div>
+    `;
+  }
+}
 
-$('todaySum').textContent=tSum;
-$('monthSum').textContent=mSum;
+/* ========= VOICE ========= */
+recBtn.onclick = () => isRecording ? stopRec() : startRec();
 
-Object.keys(byDay).sort().reverse().forEach(d=>{
-const sum=byDay[d].reduce((s,r)=>s+r.amount,0);
-let day=document.createElement('div');day.className='day';
-day.innerHTML=`<div class="day-header"><span>${label(d)}</span><span>${sum}</span></div>`;
-byDay[d].forEach(r=>{
-day.innerHTML+=`<div class="record">
-<div>${r.item}<div class="time">${r.time} · ${r.category}</div></div>
-<div>${r.amount}</div></div>`;
-});
-$('archive').appendChild(day);
-});
+function startRec() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert('Голос не поддерживается');
+    return;
+  }
 
-// analytics
-let maxDay=Object.entries(byDay).sort((a,b)=>b[1].reduce((s,r)=>s+r.amount,0)-a[1].reduce((s,r)=>s+r.amount,0))[0];
-let topCat=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
-$('analytics').innerHTML=`
-<h2>📊 Аналитика</h2>
-<div class="record">Всего за месяц <b>${mSum}</b></div>
-<div class="record">Среднее в день <b>${Math.round(mSum/Object.keys(byDay).length||0)}</b></div>
-<div class="record">Макс день <b>${maxDay?label(maxDay[0]):'-'}</b></div>
-<div class="record">Топ категория <b>${topCat?topCat[0]:'-'}</b></div>
-`;
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = 'ru-RU';
+  recognition.start();
+
+  isRecording = true;
+  recBtn.classList.add('recording');
+  recBtn.textContent = '⏹ Остановить';
+  statusEl.textContent = '🎙 Говори: "кофе 200"';
+
+  recognition.onresult = e => parseSpeech(e.results[0][0].transcript.toLowerCase());
+  recognition.onend = stopRec;
+}
+
+function stopRec() {
+  if (recognition) recognition.stop();
+  isRecording = false;
+  recBtn.classList.remove('recording');
+  recBtn.textContent = '🎤 Начать запись';
+}
+
+/* ========= PARSER ========= */
+function parseSpeech(text) {
+  statusEl.textContent = `"${text}"`;
+
+  const match = text.match(/^(.*)\s(\d+)$/);
+  if (!match) {
+    statusEl.textContent = 'Не понял. Пример: "кофе 200"';
+    return;
+  }
+
+  const item = match[1].trim();
+  const amount = parseInt(match[2],10);
+
+  if (!item || !amount) return;
+
+  records.unshift({
+    id: crypto.randomUUID(),
+    item,
+    amount,
+    date: today(),
+    time: nowTime(),
+    ts: Date.now()
+  });
+
+  localStorage.setItem('vc-records', JSON.stringify(records));
+  render();
 }
 
 render();
-
-$('recBtn').onclick=()=>rec?stop():start();
-
-function start(){
-if(!('webkitSpeechRecognition'in window))return alert('No voice');
-recognition=new webkitSpeechRecognition();
-recognition.lang='ru-RU';recognition.start();
-rec=true;$('recBtn').classList.add('recording');
-$('recBtn').textContent='⏹ Остановить';
-$('status').textContent='Слушаю…';
-recognition.onresult=e=>parse(e.results[0][0].transcript.toLowerCase());
-recognition.onend=stop;
-}
-
-function stop(){
-if(recognition)recognition.stop();
-rec=false;$('recBtn').classList.remove('recording');
-$('recBtn').textContent='🎤 Начать запись';
-$('status').textContent='';
-}
-
-function parse(t){
-$('status').textContent=`"${t}"`;
-if(t.includes('покажи'))return command(t);
-
-let m=t.match(/(.+?)\s(\w+)?\s?(\d+)/);
-if(!m)return;
-records.unshift({
-item:m[1],
-category:m[2]||'прочее',
-amount:+m[3],
-date:today(),time:time()
-});
-localStorage.setItem('vc-records',JSON.stringify(records));
-render();
-}
-
-function command(t){
-if(t.includes('аналити'))toggleAnalytics(true);
-if(t.includes('сегодня'))scrollTo(0,0);
-}
-
-function toggleAnalytics(force){
-$('analytics').classList.toggle('hidden',force===false);
-$('archive').classList.toggle('hidden',force===true);
-}
 </script>
 </body>
 </html>
