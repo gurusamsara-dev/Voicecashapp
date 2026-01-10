@@ -3,13 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Voice Cash App</title>
+  <title>Voice Cash</title>
 
   <style>
+    :root {
+      --bg: #0f0f14;
+      --card: #1a1a26;
+      --accent: #7c5cff;
+      --danger: #ff4d4d;
+      --text: #ffffff;
+      --muted: #9a9ab3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      background: #0f0f14;
-      color: #fff;
+      background: var(--bg);
+      color: var(--text);
       font-family: system-ui, -apple-system;
       min-height: 100vh;
     }
@@ -22,39 +35,67 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .total {
-      font-size: 22px;
       text-align: center;
+      font-size: 22px;
       margin-bottom: 20px;
-      color: #7c5cff;
+      color: var(--accent);
     }
 
-    button {
+    /* === RECORD BUTTON === */
+
+    .record-btn {
       width: 100%;
-      padding: 16px;
+      padding: 18px;
       font-size: 18px;
-      border-radius: 16px;
+      border-radius: 18px;
       border: none;
-      background: #7c5cff;
+      background: var(--accent);
       color: white;
-      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
     }
+
+    .record-btn.recording {
+      background: var(--danger);
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255,77,77,0.6); }
+      70% { box-shadow: 0 0 0 18px rgba(255,77,77,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
+    }
+
+    .status {
+      text-align: center;
+      margin: 12px 0 20px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+
+    /* === LIST === */
 
     ul {
       list-style: none;
       padding: 0;
+      margin: 0;
     }
 
     li {
-      background: #1a1a26;
-      padding: 12px;
-      border-radius: 12px;
+      background: var(--card);
+      padding: 14px;
+      border-radius: 14px;
       margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
 
     .item {
@@ -63,6 +104,7 @@
 
     .amount {
       font-weight: bold;
+      color: var(--accent);
     }
   </style>
 </head>
@@ -72,21 +114,37 @@
   <h1>🎙 Voice Cash</h1>
   <div class="total">Итого: <span id="total">0</span></div>
 
-  <button onclick="startListening()">🎤 Говорить</button>
+  <button id="recordBtn" class="record-btn">
+    🎤 Начать запись
+  </button>
+
+  <div id="status" class="status"></div>
 
   <ul id="list"></ul>
 </div>
 
 <script>
+  /* =====================
+     STATE
+  ====================== */
+
+  let isRecording = false;
+  let recognition = null;
+
+  const records = JSON.parse(localStorage.getItem('voice-cash')) || [];
+
+  /* =====================
+     ELEMENTS
+  ====================== */
+
+  const recordBtn = document.getElementById('recordBtn');
+  const statusEl = document.getElementById('status');
   const listEl = document.getElementById('list');
   const totalEl = document.getElementById('total');
 
-  let records = JSON.parse(localStorage.getItem('voice-cash')) || [];
-
-  function save() {
-    localStorage.setItem('voice-cash', JSON.stringify(records));
-    render();
-  }
+  /* =====================
+     RENDER
+  ====================== */
 
   function render() {
     listEl.innerHTML = '';
@@ -108,27 +166,67 @@
 
   render();
 
-  function startListening() {
+  /* =====================
+     RECORD LOGIC
+  ====================== */
+
+  recordBtn.onclick = () => {
+    if (!isRecording) {
+      startRecording();
+    } else {
+      stopRecording();
+    }
+  };
+
+  function startRecording() {
     if (!('webkitSpeechRecognition' in window)) {
       alert('Голосовой ввод не поддерживается');
       return;
     }
 
-    const rec = new webkitSpeechRecognition();
-    rec.lang = 'ru-RU';
-    rec.start();
+    recognition = new webkitSpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.interimResults = false;
 
-    rec.onresult = e => {
+    recognition.start();
+    isRecording = true;
+
+    recordBtn.classList.add('recording');
+    recordBtn.textContent = '⏹ Остановить';
+    statusEl.textContent = '🎙 Идёт запись...';
+
+    recognition.onresult = e => {
       const text = e.results[0][0].transcript.toLowerCase();
       parseText(text);
     };
+
+    recognition.onend = () => {
+      stopRecording(true);
+    };
   }
 
+  function stopRecording(fromEnd = false) {
+    if (recognition && !fromEnd) {
+      recognition.stop();
+    }
+
+    isRecording = false;
+    recordBtn.classList.remove('recording');
+    recordBtn.textContent = '🎤 Начать запись';
+    statusEl.textContent = '';
+  }
+
+  /* =====================
+     PARSER
+  ====================== */
+
   function parseText(text) {
+    statusEl.textContent = `Распознано: "${text}"`;
+
     const match = text.match(/(.+?)\s(\d+)/);
 
     if (!match) {
-      alert('Скажи, например: "Кофе 200"');
+      statusEl.textContent = '❌ Скажи, например: "Кофе 200"';
       return;
     }
 
@@ -136,7 +234,9 @@
     const amount = parseInt(match[2]);
 
     records.unshift({ item, amount });
-    save();
+    localStorage.setItem('voice-cash', JSON.stringify(records));
+
+    render();
   }
 </script>
 
