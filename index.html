@@ -8,52 +8,137 @@
   <style>
     body {
       margin: 0;
-      height: 100vh;
-      background: linear-gradient(160deg, #0f0f14, #1a1033);
-      color: #ffffff;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: #0f0f14;
+      color: #fff;
+      font-family: system-ui, -apple-system;
+      min-height: 100vh;
     }
 
     .app {
-      text-align: center;
-      padding: 24px;
+      max-width: 480px;
+      margin: auto;
+      padding: 20px;
     }
 
     h1 {
+      text-align: center;
       margin-bottom: 10px;
     }
 
+    .total {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #7c5cff;
+    }
+
     button {
-      margin-top: 20px;
-      padding: 16px 28px;
+      width: 100%;
+      padding: 16px;
       font-size: 18px;
       border-radius: 16px;
       border: none;
       background: #7c5cff;
       color: white;
+      margin-bottom: 16px;
     }
 
-    button:active {
-      transform: scale(0.96);
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #1a1a26;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .item {
+      opacity: 0.9;
+    }
+
+    .amount {
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-  <div class="app">
-    <h1>🎙 VoiceCash</h1>
-    <p>Web-приложение запущено с телефона</p>
-    <button onclick="hello()">Проверка</button>
-  </div>
+<div class="app">
+  <h1>🎙 Voice Cash</h1>
+  <div class="total">Итого: <span id="total">0</span></div>
 
-  <script>
-    function hello() {
-      alert("🔥 Всё работает! Ты реально запустил приложение.");
+  <button onclick="startListening()">🎤 Говорить</button>
+
+  <ul id="list"></ul>
+</div>
+
+<script>
+  const listEl = document.getElementById('list');
+  const totalEl = document.getElementById('total');
+
+  let records = JSON.parse(localStorage.getItem('voice-cash')) || [];
+
+  function save() {
+    localStorage.setItem('voice-cash', JSON.stringify(records));
+    render();
+  }
+
+  function render() {
+    listEl.innerHTML = '';
+    let sum = 0;
+
+    records.forEach(r => {
+      sum += r.amount;
+
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <span class="item">${r.item}</span>
+        <span class="amount">${r.amount}</span>
+      `;
+      listEl.appendChild(li);
+    });
+
+    totalEl.textContent = sum;
+  }
+
+  render();
+
+  function startListening() {
+    if (!('webkitSpeechRecognition' in window)) {
+      alert('Голосовой ввод не поддерживается');
+      return;
     }
-  </script>
+
+    const rec = new webkitSpeechRecognition();
+    rec.lang = 'ru-RU';
+    rec.start();
+
+    rec.onresult = e => {
+      const text = e.results[0][0].transcript.toLowerCase();
+      parseText(text);
+    };
+  }
+
+  function parseText(text) {
+    const match = text.match(/(.+?)\s(\d+)/);
+
+    if (!match) {
+      alert('Скажи, например: "Кофе 200"');
+      return;
+    }
+
+    const item = match[1];
+    const amount = parseInt(match[2]);
+
+    records.unshift({ item, amount });
+    save();
+  }
+</script>
 
 </body>
 </html>
