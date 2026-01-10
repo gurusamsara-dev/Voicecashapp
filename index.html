@@ -1,40 +1,210 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Voice Cash</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Cash System</title>
 
-  <style>
-    :root {
-      --bg: #0f0f14;
-      --card: #1a1a26;
-      --accent: #7c5cff;
-      --danger: #ff4d4d;
-      --text: #ffffff;
-      --muted: #9a9ab3;
-    }
+<style>
+:root {
+  --bg:#0f0f14;
+  --card:#1a1a26;
+  --accent:#7c5cff;
+  --danger:#ff4d4d;
+  --text:#fff;
+  --muted:#9a9ab3;
+}
 
-    * {
-      box-sizing: border-box;
-    }
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui;
+}
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system;
-      min-height: 100vh;
-    }
+.app {
+  max-width:480px;
+  margin:auto;
+  padding:20px;
+}
 
-    .app {
-      max-width: 480px;
-      margin: auto;
-      padding: 20px;
-    }
+h1 { text-align:center; margin-bottom:4px; }
+.total { text-align:center; font-size:22px; color:var(--accent); margin-bottom:12px; }
 
-    h1 {
-      text-align: center;
+button {
+  width:100%;
+  padding:18px;
+  font-size:18px;
+  border-radius:18px;
+  border:none;
+  background:var(--accent);
+  color:white;
+}
+
+button.recording {
+  background:var(--danger);
+  animation:pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow:0 0 0 0 rgba(255,77,77,.6); }
+  70% { box-shadow:0 0 0 18px rgba(255,77,77,0); }
+  100% { box-shadow:0 0 0 0 rgba(255,77,77,0); }
+}
+
+.status {
+  text-align:center;
+  margin:10px 0;
+  color:var(--muted);
+}
+
+.day {
+  margin-top:18px;
+}
+
+.day-header {
+  display:flex;
+  justify-content:space-between;
+  color:var(--accent);
+  margin-bottom:6px;
+}
+
+.record {
+  background:var(--card);
+  padding:12px;
+  border-radius:12px;
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:6px;
+}
+
+.time { color:var(--muted); font-size:13px; }
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1>🎙 Voice Cash</h1>
+  <div class="total">Итого: <span id="total">0</span></div>
+
+  <button id="recBtn">🎤 Начать запись</button>
+  <div class="status" id="status"></div>
+
+  <div id="archive"></div>
+</div>
+
+<script>
+/* ===== STATE ===== */
+let isRecording = false;
+let recognition = null;
+let records = JSON.parse(localStorage.getItem('vc-records')) || [];
+
+/* ===== ELEMENTS ===== */
+const recBtn = document.getElementById('recBtn');
+const statusEl = document.getElementById('status');
+const archiveEl = document.getElementById('archive');
+const totalEl = document.getElementById('total');
+
+/* ===== HELPERS ===== */
+const today = () => new Date().toISOString().slice(0,10);
+const nowTime = () => new Date().toTimeString().slice(0,5);
+
+/* ===== RENDER ===== */
+function render() {
+  archiveEl.innerHTML = '';
+  let total = 0;
+
+  const byDay = {};
+  records.forEach(r => {
+    total += r.amount;
+    byDay[r.date] = byDay[r.date] || [];
+    byDay[r.date].push(r);
+  });
+
+  totalEl.textContent = total;
+
+  Object.keys(byDay).sort().reverse().forEach(date => {
+    const daySum = byDay[date].reduce((s,r)=>s+r.amount,0);
+
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'day';
+
+    dayDiv.innerHTML = `
+      <div class="day-header">
+        <span>${date}</span>
+        <span>${daySum}</span>
+      </div>
+    `;
+
+    byDay[date].forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'record';
+      row.innerHTML = `
+        <div>
+          <div>${r.item}</div>
+          <div class="time">${r.time}</div>
+        </div>
+        <div>${r.amount}</div>
+      `;
+      dayDiv.appendChild(row);
+    });
+
+    archiveEl.appendChild(dayDiv);
+  });
+}
+
+render();
+
+/* ===== VOICE ===== */
+recBtn.onclick = () => isRecording ? stopRec() : startRec();
+
+function startRec() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert('Голос не поддерживается');
+    return;
+  }
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = 'ru-RU';
+  recognition.start();
+
+  isRecording = true;
+  recBtn.classList.add('recording');
+  recBtn.textContent = '⏹ Остановить';
+  statusEl.textContent = '🎙 Идёт запись...';
+
+  recognition.onresult = e => parseText(e.results[0][0].transcript.toLowerCase());
+  recognition.onend = stopRec;
+}
+
+function stopRec() {
+  if (recognition) recognition.stop();
+  isRecording = false;
+  recBtn.classList.remove('recording');
+  recBtn.textContent = '🎤 Начать запись';
+  statusEl.textContent = '';
+}
+
+/* ===== PARSER ===== */
+function parseText(text) {
+  statusEl.textContent = `Распознано: "${text}"`;
+  const match = text.match(/(.+?)\s(\d+)/);
+  if (!match) return;
+
+  records.unshift({
+    id: crypto.randomUUID(),
+    item: match[1],
+    amount: parseInt(match[2]),
+    date: today(),
+    time: nowTime(),
+    timestamp: Date.now()
+  });
+
+  localStorage.setItem('vc-records', JSON.stringify(records));
+  render();
+}
+</script>
+</body>
+</html>: center;
       margin-bottom: 8px;
     }
 
