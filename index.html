@@ -1,76 +1,121 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voice Cash</title>
 
 <style>
 :root{
-  --bg:#0f0f14;--card:#1a1a26;--accent:#7c5cff;--danger:#ff4d4d;--text:#fff;--muted:#9a9ab3;
+  --bg:#0f0f14;--card:#1a1a26;--accent:#7c5cff;
+  --danger:#ff4d4d;--ok:#22c55e;
+  --text:#fff;--muted:#9a9ab3;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui}
-.app{max-width:520px;margin:auto;padding:16px 14px 22px}
-h1{text-align:center;margin:10px 0 12px}
+.app{max-width:520px;margin:auto;padding:16px}
+
+h1{text-align:center;margin:10px 0 14px}
 
 .hidden{display:none}
 
+/* top buttons */
 .topbar{display:flex;gap:10px;margin-bottom:12px}
 .topbar button{
   flex:1;padding:12px;border-radius:14px;
-  border:1px solid rgba(255,255,255,.08);
-  background:var(--card);color:var(--text)
+  background:var(--card);color:var(--text);
+  border:1px solid rgba(255,255,255,.08)
 }
 .topbar button.active{
-  border-color:rgba(124,92,255,.7);
-  box-shadow:0 0 0 2px rgba(124,92,255,.15) inset;
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(124,92,255,.2) inset;
 }
 
+/* summary */
 .row{display:flex;gap:10px;margin-bottom:12px}
 .card{flex:1;background:var(--card);border-radius:14px;padding:12px}
 .card .label{color:var(--muted);font-size:13px}
 .card .value{color:var(--accent);font-size:20px;margin-top:6px}
 
+/* voice */
 button.primary{
-  width:100%;padding:16px;border-radius:16px;border:none;
-  background:var(--accent);color:#fff;font-size:18px
+  width:100%;padding:16px;border-radius:16px;
+  border:none;background:var(--accent);color:#fff;font-size:18px
 }
-button.primary.recording{background:var(--danger);animation:pulse 1.2s infinite}
+button.primary.recording{
+  background:var(--danger);
+  animation:pulse 1.2s infinite
+}
 @keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(255,77,77,.5)}
-  70%{box-shadow:0 0 0 16px rgba(255,77,77,0)}
+  0%{box-shadow:0 0 0 0 rgba(255,77,77,.6)}
+  70%{box-shadow:0 0 0 18px rgba(255,77,77,0)}
   100%{box-shadow:0 0 0 0 rgba(255,77,77,0)}
 }
-
 .status{text-align:center;color:var(--muted);margin:10px 0}
 
-.sectionTitle{
-  display:flex;justify-content:space-between;
-  margin:12px 0 6px;color:var(--accent);font-weight:600
-}
-
+/* records */
 .record{
   background:var(--card);border-radius:12px;
   padding:10px;margin:8px 0;
-  display:flex;justify-content:space-between
+  display:flex;justify-content:space-between;
+  cursor:pointer
 }
 .record .meta{color:var(--muted);font-size:12px}
 
+/* chart */
 .chart{
-  display:flex;align-items:flex-end;gap:6px;height:160px;
-  margin-top:10px;overflow-x:auto;padding-bottom:18px
+  display:flex;align-items:flex-end;
+  gap:6px;height:170px;
+  margin-top:14px;
+  overflow-x:auto;padding-bottom:20px
 }
 .col{
-  width:16px;border-radius:6px;
-  background:rgba(124,92,255,.8);cursor:pointer;position:relative
+  width:18px;border-radius:6px;
+  background:rgba(124,92,255,.8);
+  position:relative;cursor:pointer
 }
 .col.zero{background:rgba(255,255,255,.12)}
-.col span{
-  position:absolute;bottom:-16px;left:50%;
+.col .sum{
+  position:absolute;top:-16px;left:50%;
+  transform:translateX(-50%);
+  font-size:10px
+}
+.col .day{
+  position:absolute;bottom:-18px;left:50%;
   transform:translateX(-50%);
   font-size:10px;color:var(--muted)
 }
+
+/* modal */
+.modalBack{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.6);
+  display:flex;align-items:flex-end;
+  padding:14px
+}
+.modal{
+  background:var(--card);
+  width:100%;max-width:520px;
+  margin:auto;border-radius:18px;
+  padding:14px
+}
+.modal h3{margin:4px 0 10px}
+.field{margin-bottom:10px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{
+  width:100%;padding:12px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  color:var(--text)
+}
+.modalActions{display:flex;gap:10px}
+.modalActions button{
+  flex:1;padding:12px;border-radius:14px;
+  border:none;font-size:15px
+}
+.save{background:var(--ok)}
+.del{background:var(--danger);color:#fff}
+.cancel{background:rgba(255,255,255,.1)}
 </style>
 </head>
 
@@ -93,122 +138,142 @@ button.primary.recording{background:var(--danger);animation:pulse 1.2s infinite}
   <button id="recBtn" class="primary">🎤 Начать запись</button>
   <div class="status" id="status"></div>
 
-  <!-- DAY -->
-  <div id="viewDay">
-    <div class="sectionTitle"><span>Сегодня</span><span id="daySum">0</span></div>
-    <div id="dayList"></div>
-  </div>
-
-  <!-- MONTH -->
+  <div id="viewDay"></div>
   <div id="viewMonth" class="hidden">
-    <div class="sectionTitle"><span>Этот месяц</span><span id="monthSum">0</span></div>
     <div class="chart" id="monthChart"></div>
   </div>
+  <div id="viewYear" class="hidden"></div>
+</div>
 
-  <!-- YEAR -->
-  <div id="viewYear" class="hidden">
-    <div class="sectionTitle"><span>Этот год</span><span id="yearSum">0</span></div>
-    <div class="chart" id="yearChart"></div>
+<!-- modal -->
+<div id="modalBack" class="modalBack hidden">
+  <div class="modal">
+    <h3>Редактирование</h3>
+    <div class="field">
+      <label>Название</label>
+      <input id="mItem">
+    </div>
+    <div class="field">
+      <label>Сумма</label>
+      <input id="mAmount" type="number">
+    </div>
+    <div class="field">
+      <label>Категория</label>
+      <input id="mCategory">
+    </div>
+    <div class="modalActions">
+      <button class="cancel" onclick="closeModal()">Отмена</button>
+      <button class="del" onclick="deleteRecord()">Удалить</button>
+      <button class="save" onclick="saveRecord()">Сохранить</button>
+    </div>
   </div>
 </div>
 
 <script>
-const CATEGORY_RULES = [
-  {category:'Кофе',keywords:['кофе','латте','капучино','эспрессо']},
-  {category:'Еда',keywords:['еда','ресторан','шаурма','пицца','бургер']},
-  {category:'Транспорт',keywords:['такси','uber','метро','автобус']},
-  {category:'Развлечения',keywords:['кино','бар','клуб']}
-];
-const detectCategory = t=>{
-  t=t.toLowerCase();
-  for(const r of CATEGORY_RULES)
-    for(const k of r.keywords)
-      if(t.includes(k)) return r.category;
-  return 'Неопределено';
-};
-
-const KEY='vc-records';
+const KEY='vc-data';
 let records=JSON.parse(localStorage.getItem(KEY)||'[]');
 
+const rules=[
+ {c:'Кофе',k:['кофе','латте','капучино']},
+ {c:'Еда',k:['еда','ресторан','шаурма','пицца']},
+ {c:'Транспорт',k:['такси','метро','автобус']}
+];
+const detectCat=t=>{
+ t=t.toLowerCase();
+ for(const r of rules)
+  for(const k of r.k)
+   if(t.includes(k)) return r.c;
+ return 'Неопределено';
+};
+
 const $=id=>document.getElementById(id);
-const btnDay=$('btnDay'),btnMonth=$('btnMonth'),btnYear=$('btnYear');
-const viewDay=$('viewDay'),viewMonth=$('viewMonth'),viewYear=$('viewYear');
-const recBtn=$('recBtn'),statusEl=$('status');
+let view='day',editing=null;
 
-btnDay.onclick=()=>setView('day');
-btnMonth.onclick=()=>setView('month');
-btnYear.onclick=()=>setView('year');
-
-function setView(v){
-  btnDay.classList.toggle('active',v==='day');
-  btnMonth.classList.toggle('active',v==='month');
-  btnYear.classList.toggle('active',v==='year');
-  viewDay.classList.toggle('hidden',v!=='day');
-  viewMonth.classList.toggle('hidden',v!=='month');
-  viewYear.classList.toggle('hidden',v!=='year');
-  render();
-}
-
-function nowISO(){return new Date().toISOString().slice(0,10);}
-function nowMonth(){return nowISO().slice(0,7);}
-function nowYear(){return nowISO().slice(0,4);}
+function iso(d){return d.toISOString().slice(0,10)}
+function now(){return iso(new Date())}
 
 function render(){
-  let todaySum=0,monthSum=0,yearSum=0;
-  const dayList=$('dayList'); dayList.innerHTML='';
-  records.forEach(r=>{
-    if(r.date===nowISO()){todaySum+=r.amount;
-      const d=document.createElement('div');
-      d.className='record';
-      d.innerHTML=`<div>${r.item}<div class="meta">${r.time}</div></div><div>${r.amount}</div>`;
-      dayList.appendChild(d);
-    }
-    if(r.date.startsWith(nowMonth())) monthSum+=r.amount;
-    if(r.date.startsWith(nowYear())) yearSum+=r.amount;
-  });
-  $('sumToday').textContent=todaySum;
-  $('sumMonth').textContent=monthSum;
-  $('sumYear').textContent=yearSum;
-  $('daySum').textContent=todaySum;
-  $('monthSum').textContent=monthSum;
-  $('yearSum').textContent=yearSum;
+ let today=0,month=0,year=0;
+ $('viewDay').innerHTML='';
+ records.forEach(r=>{
+  if(r.date===now()){
+   today+=r.amount;
+   const d=document.createElement('div');
+   d.className='record';
+   d.onclick=()=>openModal(r.id);
+   d.innerHTML=`<div>${r.item}<div class="meta">${r.category}</div></div><div>${r.amount}</div>`;
+   $('viewDay').appendChild(d);
+  }
+  if(r.date.slice(0,7)===now().slice(0,7)) month+=r.amount;
+  if(r.date.slice(0,4)===now().slice(0,4)) year+=r.amount;
+ });
+ $('sumToday').textContent=today;
+ $('sumMonth').textContent=month;
+ $('sumYear').textContent=year;
+ renderMonth();
 }
 
-let recognition,isRecording=false;
-recBtn.onclick=()=>isRecording?stopRec():startRec();
+function renderMonth(){
+ const days={};
+ records.forEach(r=>{
+  if(r.date.slice(0,7)!==now().slice(0,7)) return;
+  days[r.date]=(days[r.date]||0)+r.amount;
+ });
+ const chart=$('monthChart');
+ chart.innerHTML='';
+ Object.keys(days).sort().forEach(d=>{
+  const col=document.createElement('div');
+  col.className='col';
+  col.style.height=(days[d]/5)+'px';
+  col.innerHTML=`<div class="sum">${days[d]}</div><div class="day">${d.slice(8)}</div>`;
+  col.onclick=()=>{view='day';$('btnDay').click();};
+  chart.appendChild(col);
+ });
+}
 
-function startRec(){
-  if(!('webkitSpeechRecognition'in window)){alert('Нет поддержки голоса');return;}
-  recognition=new webkitSpeechRecognition();
-  recognition.lang='ru-RU';
-  recognition.onresult=e=>parseVoice(e.results[0][0].transcript);
-  recognition.onend=()=>stopRec();
-  isRecording=true;
-  recBtn.classList.add('recording');
-  recBtn.textContent='⏹ Остановить';
-  statusEl.textContent='Говори: "кофе 200"';
-  recognition.start();
-}
-function stopRec(){
-  if(recognition) recognition.stop();
-  isRecording=false;
-  recBtn.classList.remove('recording');
-  recBtn.textContent='🎤 Начать запись';
-}
-function parseVoice(text){
-  const m=text.toLowerCase().match(/(.+)\s(\d+)/);
-  if(!m){statusEl.textContent='Не понял';return;}
-  const item=m[1].trim(),amount=+m[2];
+let recognition,isRec=false;
+$('recBtn').onclick=()=>{
+ if(isRec){recognition.stop();return;}
+ recognition=new webkitSpeechRecognition();
+ recognition.lang='ru-RU';
+ recognition.onresult=e=>{
+  const t=e.results[0][0].transcript;
+  const m=t.match(/(.+)\s(\d+)/);
+  if(!m) return;
   records.unshift({
-    id:crypto.randomUUID(),
-    item,amount,
-    category:detectCategory(item),
-    date:nowISO(),
-    time:new Date().toTimeString().slice(0,5)
+   id:crypto.randomUUID(),
+   item:m[1].trim(),
+   amount:+m[2],
+   category:detectCat(m[1]),
+   date:now()
   });
   localStorage.setItem(KEY,JSON.stringify(records));
-  statusEl.textContent=`Добавлено: ${item} ${amount}`;
   render();
+ };
+ recognition.start();
+};
+
+function openModal(id){
+ editing=records.find(r=>r.id===id);
+ $('modalBack').classList.remove('hidden');
+ $('mItem').value=editing.item;
+ $('mAmount').value=editing.amount;
+ $('mCategory').value=editing.category;
+}
+function closeModal(){
+ $('modalBack').classList.add('hidden');
+}
+function saveRecord(){
+ editing.item=$('mItem').value;
+ editing.amount=+$('mAmount').value;
+ editing.category=$('mCategory').value||editing.category;
+ localStorage.setItem(KEY,JSON.stringify(records));
+ closeModal();render();
+}
+function deleteRecord(){
+ records=records.filter(r=>r.id!==editing.id);
+ localStorage.setItem(KEY,JSON.stringify(records));
+ closeModal();render();
 }
 
 render();
