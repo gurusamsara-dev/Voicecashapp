@@ -10,8 +10,6 @@
   --bg:#0b0b10;
   --card:#171724;
   --accent:#7c5cff;
-  --danger:#ff4d4d;
-  --ok:#22c55e;
   --text:#ffffff;
   --muted:#9a9ab3;
 }
@@ -29,87 +27,29 @@ body{
 }
 h1{
   text-align:center;
-  opacity:.85;
-  margin:10px 0 14px;
-}
-button{
-  border:none;
-  cursor:pointer;
-}
-.hidden{display:none}
-
-/* TOP BUTTONS */
-.topbar{
-  display:flex;
-  gap:10px;
-}
-.topbar button{
-  flex:1;
-  padding:12px;
-  border-radius:14px;
-  background:var(--card);
-  color:var(--text);
-}
-.topbar button.active{
-  outline:2px solid rgba(124,92,255,.4);
-}
-
-/* SUMMARY */
-.row{
-  display:flex;
-  gap:10px;
-  margin:12px 0;
-}
-.card{
-  flex:1;
-  background:var(--card);
-  border-radius:14px;
-  padding:12px;
-}
-.card .label{color:var(--muted);font-size:13px}
-.card .value{color:var(--accent);font-size:20px;margin-top:6px}
-
-/* RECORD BUTTON */
-.primary{
-  width:100%;
-  padding:16px;
-  border-radius:16px;
-  background:var(--accent);
-  color:#fff;
-  font-size:18px;
-  margin-top:8px;
-}
-.primary.recording{
-  background:var(--danger);
-  animation:pulse 1.2s infinite;
-}
-@keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(255,77,77,.5)}
-  70%{box-shadow:0 0 0 16px rgba(255,77,77,0)}
+  opacity:.9;
+  margin-bottom:16px;
 }
 
 /* RECORD LIST */
-.section{
-  margin-top:16px;
-}
 .record{
   background:var(--card);
   border-radius:14px;
-  padding:10px;
+  padding:12px;
   display:flex;
   align-items:center;
-  gap:10px;
-  margin-bottom:8px;
+  gap:12px;
+  margin-bottom:10px;
 }
 .icon{
-  width:34px;
-  height:34px;
+  width:36px;
+  height:36px;
   border-radius:10px;
   background:rgba(255,255,255,.08);
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:18px;
+  font-size:20px;
 }
 .record-main{
   flex:1;
@@ -120,196 +60,75 @@ button{
 .record-main .time{
   font-size:12px;
   color:var(--muted);
+  margin-top:2px;
 }
 .amount{
   font-size:16px;
+  color:var(--accent);
 }
-.menu-btn{
-  background:transparent;
+
+/* EMPTY */
+.empty{
+  text-align:center;
   color:var(--muted);
-  font-size:22px;
-  padding:6px;
+  margin-top:40px;
 }
-
-/* MENU */
-.menu{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-}
-.menu-box{
-  background:var(--card);
-  border-radius:18px;
-  width:100%;
-  max-width:520px;
-  padding:12px;
-}
-.menu-box button{
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  background:rgba(255,255,255,.06);
-  color:var(--text);
-  margin-bottom:8px;
-}
-.menu-box .danger{background:var(--danger)}
-.menu-box .cancel{opacity:.7}
-
-/* MODAL */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.modal-box{
-  background:var(--card);
-  border-radius:18px;
-  padding:16px;
-  width:90%;
-  max-width:420px;
-}
-.modal-box h3{text-align:center}
-.field{
-  margin:10px 0;
-}
-.field input{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
-  border:none;
-  background:rgba(255,255,255,.08);
-  color:#fff;
-}
-.actions{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-}
-.actions button{
-  flex:1;
-  padding:12px;
-  border-radius:14px;
-}
-.save{background:var(--ok);color:#082}
-.cancel{background:rgba(255,255,255,.1)}
 </style>
 </head>
 
 <body>
 <div class="app">
   <h1>🎙 Voice Cash</h1>
-
-  <div class="topbar">
-    <button class="active">Траты за день</button>
-    <button>Аналитика месяц</button>
-    <button>Аналитика год</button>
-  </div>
-
-  <div class="row">
-    <div class="card"><div class="label">Сегодня</div><div class="value" id="sum">0</div></div>
-  </div>
-
-  <button id="recBtn" class="primary">🎤 Начать запись</button>
-
-  <div class="section" id="list"></div>
-</div>
-
-<!-- MENU -->
-<div id="menu" class="menu hidden">
-  <div class="menu-box">
-    <button id="editBtn">✏️ Редактировать</button>
-    <button id="deleteBtn" class="danger">🗑 Удалить</button>
-    <button id="closeMenu" class="cancel">Отмена</button>
-  </div>
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="modal hidden">
-  <div class="modal-box">
-    <h3>Редактирование</h3>
-    <div class="field"><input id="editName"></div>
-    <div class="field"><input id="editAmount" type="number"></div>
-    <div class="actions">
-      <button class="cancel" id="cancelEdit">Отмена</button>
-      <button class="save" id="saveEdit">Сохранить</button>
-    </div>
-  </div>
+  <div id="list"></div>
+  <div id="empty" class="empty hidden">Пока нет записей</div>
 </div>
 
 <script>
-let records = JSON.parse(localStorage.getItem('vc-records')||'[]');
-let activeId = null;
+const STORAGE_KEY = 'vc-records';
+
+/* LOAD + NORMALIZE */
+let raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let records = raw.map(r=>({
+  id: r.id || crypto.randomUUID(),
+  name: r.name || r.item || r.title || 'Без названия',
+  amount: Number(r.amount) || 0,
+  time: r.time || '—',
+  category: r.category || 'Неопределено'
+}));
+localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 
 const list = document.getElementById('list');
-const sumEl = document.getElementById('sum');
+const empty = document.getElementById('empty');
 
 function icon(cat){
-  if(cat==='Еда') return '🍗';
+  if(cat === 'Еда') return '🍗';
+  if(cat === 'Кофе') return '☕';
+  if(cat === 'Транспорт') return '🚕';
   return '❓';
 }
 
 function render(){
-  list.innerHTML='';
-  let sum=0;
+  list.innerHTML = '';
+  if(records.length === 0){
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
   records.forEach(r=>{
-    sum+=r.amount;
-    const el=document.createElement('div');
-    el.className='record';
-    el.innerHTML=`
+    const el = document.createElement('div');
+    el.className = 'record';
+    el.innerHTML = `
       <div class="icon">${icon(r.category)}</div>
       <div class="record-main">
         <div class="name">${r.name}</div>
         <div class="time">${r.time}</div>
       </div>
       <div class="amount">${r.amount}</div>
-      <button class="menu-btn">⋮</button>
     `;
-    el.querySelector('.menu-btn').onclick=()=>{
-      activeId=r.id;
-      document.getElementById('menu').classList.remove('hidden');
-    };
     list.appendChild(el);
   });
-  sumEl.textContent=sum;
 }
-
-document.getElementById('closeMenu').onclick=()=>{
-  document.getElementById('menu').classList.add('hidden');
-};
-
-document.getElementById('editBtn').onclick=()=>{
-  const r=records.find(x=>x.id===activeId);
-  document.getElementById('editName').value=r.name;
-  document.getElementById('editAmount').value=r.amount;
-  document.getElementById('menu').classList.add('hidden');
-  document.getElementById('modal').classList.remove('hidden');
-};
-
-document.getElementById('saveEdit').onclick=()=>{
-  const r=records.find(x=>x.id===activeId);
-  r.name=document.getElementById('editName').value;
-  r.amount=parseInt(document.getElementById('editAmount').value);
-  localStorage.setItem('vc-records',JSON.stringify(records));
-  document.getElementById('modal').classList.add('hidden');
-  render();
-};
-
-document.getElementById('cancelEdit').onclick=()=>{
-  document.getElementById('modal').classList.add('hidden');
-};
-
-document.getElementById('deleteBtn').onclick=()=>{
-  records=records.filter(x=>x.id!==activeId);
-  localStorage.setItem('vc-records',JSON.stringify(records));
-  document.getElementById('menu').classList.add('hidden');
-  render();
-};
 
 render();
 </script>
