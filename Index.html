@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Voice Cash v1.6.0</title>
+<meta name="app-version" content="2026-01-11-1600" />
+
+<style>
+/* ================= VERSION FIX ================= */
+:root{
+  --bg:#0b0b10;
+  --card:#171724;
+  --accent:#7c5cff;
+  --text:#fff;
+  --muted:#9a9ab3;
+  --danger:#ff4d4d;
+  --ok:#22c55e;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#16162a,#07070b);
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
+}
+.hidden{display:none}
+
+/* ================= LAYOUT ================= */
+.app{
+  max-width:520px;
+  margin:auto;
+  padding:16px;
+}
+h1{
+  text-align:center;
+  margin:10px 0 14px;
+  font-size:24px;
+  opacity:.9;
+}
+
+/* ================= BUTTONS ================= */
+.topbar{
+  display:flex;
+  gap:10px;
+  margin-bottom:14px;
+}
+.topbar button{
+  flex:1;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  color:var(--text);
+}
+.topbar button.active{
+  border-color:var(--accent);
+  box-shadow:0 0 18px rgba(124,92,255,.35);
+}
+
+/* ================= CARDS ================= */
+.row{
+  display:flex;
+  gap:10px;
+  margin-bottom:14px;
+}
+.card{
+  flex:1;
+  background:var(--card);
+  border-radius:14px;
+  padding:12px;
+}
+.card .label{color:var(--muted);font-size:13px}
+.card .value{color:var(--accent);font-size:22px;margin-top:6px}
+
+/* ================= RECORD BUTTON ================= */
+.primary{
+  width:100%;
+  padding:16px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#7c5cff,#9f85ff);
+  border:none;
+  font-size:18px;
+  color:white;
+}
+
+/* ================= LIST ================= */
+.record{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:var(--card);
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:10px;
+}
+.icon{
+  font-size:22px;
+}
+.record-main{
+  flex:1;
+}
+.record-main .item{font-size:15px}
+.record-main .meta{
+  font-size:12px;
+  color:var(--muted);
+}
+.amount{
+  font-size:16px;
+}
+.menu{
+  cursor:pointer;
+  font-size:20px;
+  padding:4px;
+}
+
+/* ================= MENU ================= */
+.menuBox{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+.menuPanel{
+  background:var(--card);
+  width:100%;
+  max-width:520px;
+  border-radius:18px 18px 0 0;
+  padding:14px;
+}
+.menuPanel button{
+  width:100%;
+  padding:14px;
+  margin-bottom:8px;
+  border-radius:12px;
+  border:none;
+  font-size:16px;
+}
+.edit{background:rgba(124,92,255,.15);color:white}
+.del{background:var(--danger);color:white}
+.cancel{background:rgba(255,255,255,.08);color:white}
+
+/* ================= EDIT MODAL ================= */
+.modalBack{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.modal{
+  background:var(--card);
+  padding:16px;
+  border-radius:18px;
+  width:90%;
+  max-width:420px;
+}
+.modal h3{text-align:center}
+.modal input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  color:white;
+  margin-bottom:10px;
+}
+.modal .actions{
+  display:flex;
+  gap:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1>🎙 Voice Cash</h1>
+
+  <div class="topbar">
+    <button class="active">Траты за день</button>
+    <button>Аналитика месяц</button>
+    <button>Аналитика год</button>
+  </div>
+
+  <div class="row">
+    <div class="card"><div class="label">Сегодня</div><div class="value" id="sum">0</div></div>
+    <div class="card"><div class="label">Месяц</div><div class="value">—</div></div>
+    <div class="card"><div class="label">Год</div><div class="value">—</div></div>
+  </div>
+
+  <button class="primary">🎤 Начать запись</button>
+
+  <div id="list"></div>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="menuBox hidden">
+  <div class="menuPanel">
+    <button class="edit" onclick="openEdit()">✏️ Редактировать</button>
+    <button class="del" onclick="deleteRec()">🗑 Удалить</button>
+    <button class="cancel" onclick="closeMenu()">Отмена</button>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div id="edit" class="modalBack hidden">
+  <div class="modal">
+    <h3>Редактирование</h3>
+    <input id="eItem" placeholder="Название">
+    <input id="eSum" type="number" placeholder="Сумма">
+    <input id="eCat" disabled>
+    <div class="actions">
+      <button class="cancel" onclick="closeEdit()">Отмена</button>
+      <button class="edit" onclick="saveEdit()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= VERSION AUTO-RELOAD ================= */
+const VERSION='2026-01-11-1600';
+if(localStorage.vcVer!==VERSION){
+  localStorage.vcVer=VERSION;
+  location.reload(true);
+}
+
+/* ================= DATA ================= */
+const ICONS={
+  'Еда':'🍗',
+  'Кофе':'☕',
+  'Транспорт':'🚕',
+  'Неопределено':'❓'
+};
+let data=JSON.parse(localStorage.vcData||'[]');
+let current=null;
+
+/* ================= RENDER ================= */
+function render(){
+  const list=document.getElementById('list');
+  list.innerHTML='';
+  let sum=0;
+  data.forEach(r=>{
+    sum+=r.amount;
+    list.innerHTML+=`
+      <div class="record">
+        <div class="icon">${ICONS[r.category]||'❓'}</div>
+        <div class="record-main">
+          <div class="item">${r.item}</div>
+          <div class="meta">${r.category}</div>
+        </div>
+        <div class="amount">${r.amount}</div>
+        <div class="menu" onclick="openMenu('${r.id}')">⋮</div>
+      </div>`;
+  });
+  document.getElementById('sum').textContent=sum;
+  localStorage.vcData=JSON.stringify(data);
+}
+render();
+
+/* ================= MENU ================= */
+function openMenu(id){
+  current=id;
+  menu.classList.remove('hidden');
+}
+function closeMenu(){menu.classList.add('hidden')}
+
+/* ================= EDIT ================= */
+function openEdit(){
+  const r=data.find(x=>x.id===current);
+  eItem.value=r.item;
+  eSum.value=r.amount;
+  eCat.value=r.category;
+  menu.classList.add('hidden');
+  edit.classList.remove('hidden');
+}
+function closeEdit(){edit.classList.add('hidden')}
+function saveEdit(){
+  const r=data.find(x=>x.id===current);
+  r.item=eItem.value;
+  r.amount=+eSum.value;
+  closeEdit();
+  render();
+}
+function deleteRec(){
+  data=data.filter(x=>x.id!==current);
+  closeMenu();
+  render();
+}
+</script>
+</body>
+  </html>
