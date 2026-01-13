@@ -564,7 +564,7 @@ btn.onclick=()=>{
  rec.onresult=e=>{
   const t=e.results[0][0].transcript;
   if(!t) return;
-  const m=t.match(/(.+?)\s+(\d+(?:[.,]\d+)?)/);
+  const m=t.match(/(.+)\s+(\d+(?:[.,]\d+)?)$/);
   if(!m) return;
   records.unshift({
    id:crypto.randomUUID(),
