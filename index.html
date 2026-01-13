@@ -511,6 +511,16 @@ function today(){
  return new Date().toISOString().slice(0,10);
 }
 
+function formatAmount(amount){
+ // Format amount without unnecessary decimals
+ // If integer, show without decimals; if decimal, show without trailing zeros
+ if(Number.isInteger(amount)){
+  return amount.toString();
+ }
+ // Remove trailing zeros after decimal point
+ return amount.toString().replace(/\.?0+$/,'');
+}
+
 function render(){
  let t=0,m=0,y=0;
  const list=document.getElementById('list');
@@ -529,7 +539,7 @@ function render(){
       <div class="recMeta">${r.category}</div>
     </div>
     <div class="recRight">
-      <div class="amount">${r.amount}</div>
+      <div class="amount">${formatAmount(r.amount)}</div>
       <button class="menuBtn" data-id="${r.id}">⋮</button>
     </div>`;
    list.appendChild(row);
@@ -538,9 +548,9 @@ function render(){
   if(recDate.slice(0,7)===todayStr.slice(0,7)) m+=r.amount;
   if(recDate.slice(0,4)===todayStr.slice(0,4)) y+=r.amount;
  });
- document.getElementById('sumToday').textContent=t;
- document.getElementById('sumMonth').textContent=m;
- document.getElementById('sumYear').textContent=y;
+ document.getElementById('sumToday').textContent=formatAmount(t);
+ document.getElementById('sumMonth').textContent=formatAmount(m);
+ document.getElementById('sumYear').textContent=formatAmount(y);
 }
 
 let rec,isRec=false;
@@ -633,7 +643,7 @@ btn.onclick=()=>{
    item:m[1].trim(),
    amount:+m[2].replace(',','.'),
    category:detectCat(m[1]),
-   date:today()
+   date:new Date().toISOString()
   });
   localStorage.setItem(KEY,JSON.stringify(records));
   render();
@@ -891,7 +901,7 @@ function showExpensesForDate(date){
      <div class="recMeta">${r.category}</div>
     </div>
     <div class="recRight">
-     <div class="amount">${r.amount}</div>
+     <div class="amount">${formatAmount(r.amount)}</div>
      <button class="menuBtn" data-id="${r.id}">⋮</button>
     </div>
    </div>`;
@@ -925,7 +935,7 @@ function showExpensesForMonth(monthPrefix){
  let html=`<h4>Expenses for ${monthPrefix}</h4>`;
  Object.keys(dailyTotals).sort().forEach(date=>{
   const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
-  html+=`<div class="card" style="margin-bottom:8px;"><div class="label">${date}</div><div class="value">${dailyTotals[date]}</div></div>`;
+  html+=`<div class="card" style="margin-bottom:8px;"><div class="label">${date}</div><div class="value">${formatAmount(dailyTotals[date])}</div></div>`;
   dayRecords.forEach(r=>{
    html+=`
     <div class="record">
@@ -935,7 +945,7 @@ function showExpensesForMonth(monthPrefix){
       <div class="recMeta">${r.category}</div>
      </div>
      <div class="recRight">
-      <div class="amount">${r.amount}</div>
+      <div class="amount">${formatAmount(r.amount)}</div>
       <button class="menuBtn" data-id="${r.id}">⋮</button>
      </div>
     </div>`;
