@@ -562,14 +562,73 @@ btn.onclick=()=>{
  const langCodes={en:'en-US',ru:'ru-RU',es:'es-ES',fr:'fr-FR',de:'de-DE',it:'it-IT',pt:'pt-PT',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',ar:'ar-SA',hi:'hi-IN',tr:'tr-TR',nl:'nl-NL',pl:'pl-PL'};
  rec.lang=langCodes[currentLang]||'en-US';
  rec.onresult=e=>{
-  const t=e.results[0][0].transcript;
+  let t=e.results[0][0].transcript;
   if(!t) return;
+
+  // Convert number words to digits
+  const numberWords={
+   ru:{
+    'ноль':0,'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,
+    'десять':10,'одиннадцать':11,'двенадцать':12,'тринадцать':13,'четырнадцать':14,'пятнадцать':15,'шестнадцать':16,'семнадцать':17,'восемнадцать':18,'девятнадцать':19,
+    'двадцать':20,'тридцать':30,'сорок':40,'пятьдесят':50,'шестьдесят':60,'семьдесят':70,'восемьдесят':80,'девяносто':90,
+    'сто':100,'двести':200,'триста':300,'четыреста':400,'пятьсот':500,'шестьсот':600,'семьсот':700,'восемьсот':800,'девятьсот':900,
+    'тысяча':1000,'тысячи':1000,'тысяч':1000,'миллион':1000000,'миллиона':1000000,'миллионов':1000000
+   },
+   en:{
+    'zero':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,
+    'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,
+    'twenty':20,'thirty':30,'forty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90,
+    'hundred':100,'thousand':1000,'million':1000000
+   },
+   es:{
+    'cero':0,'uno':1,'una':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,
+    'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciséis':16,'diecisiete':17,'dieciocho':18,'diecinueve':19,
+    'veinte':20,'treinta':30,'cuarenta':40,'cincuenta':50,'sesenta':60,'setenta':70,'ochenta':80,'noventa':90,
+    'cien':100,'ciento':100,'doscientos':200,'trescientos':300,'cuatrocientos':400,'quinientos':500,'seiscientos':600,'setecientos':700,'ochocientos':800,'novecientos':900,
+    'mil':1000,'millón':1000000
+   }
+  };
+
+  const dict=numberWords[currentLang]||numberWords.en;
+  const words=t.toLowerCase().split(/\s+/);
+  let total=0;
+  let current=0;
+  let lastWasNumber=false;
+  let numberStartIndex=-1;
+
+  for(let i=words.length-1;i>=0;i--){
+   const word=words[i].replace(/[.,!?]/g,'');
+   if(dict[word]!==undefined){
+    const val=dict[word];
+    if(numberStartIndex===-1) numberStartIndex=i;
+    if(val>=1000){
+     current+=val;
+     total+=current*val;
+     current=0;
+    }else if(val>=100){
+     current+=val;
+    }else{
+     current+=val;
+    }
+    lastWasNumber=true;
+   }else if(lastWasNumber){
+    break;
+   }
+  }
+
+  if(lastWasNumber && numberStartIndex>=0){
+   total+=current;
+   if(total>0){
+    t=words.slice(0,numberStartIndex).join(' ')+' '+total;
+   }
+  }
+
   const m=t.match(/(.+)\s+(\d+(?:[.,]\d+)?)$/);
   if(!m) return;
   records.unshift({
    id:crypto.randomUUID(),
    item:m[1].trim(),
-   amount:+m[2],
+   amount:+m[2].replace(',','.'),
    category:detectCat(m[1]),
    date:today()
   });
