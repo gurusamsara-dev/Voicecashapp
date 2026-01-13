@@ -245,6 +245,53 @@ button.primary.recording{
   color:var(--muted);
   border:1px solid rgba(255,255,255,0.1);
 }
+
+/* charts */
+.chartView{
+  padding:16px;
+}
+.chartView h3{
+  margin:0 0 16px;
+  font-size:18px;
+}
+.chart{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  height:200px;
+  gap:4px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.bar{
+  flex:1;
+  background:var(--accent);
+  border-radius:4px 4px 0 0;
+  min-height:2px;
+  cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+}
+.bar:hover{
+  background:var(--danger);
+  transform:scaleY(1.05);
+}
+.barLabel{
+  position:absolute;
+  bottom:-20px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:10px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.dayView{
+  margin-top:20px;
+}
+.dayView h4{
+  margin:0 0 12px;
+  font-size:16px;
+}
 </style>
 </head>
 
@@ -290,6 +337,10 @@ button.primary.recording{
   <div class="editForm">
     <h2>Edit Expense</h2>
     <div class="formGroup">
+      <label>Item Name</label>
+      <input type="text" id="editItem">
+    </div>
+    <div class="formGroup">
       <label>Category</label>
       <input type="text" id="editCategory">
     </div>
@@ -305,6 +356,16 @@ button.primary.recording{
       <button class="btnCancel" id="cancelEdit">Cancel</button>
       <button class="btnSave" id="saveEdit">Save</button>
     </div>
+  </div>
+</div>
+
+<div id="chartPanel" class="editPanel">
+  <div class="editForm chartView">
+    <div class="settingsHeader">
+      <button class="backBtn" id="chartBack">←</button>
+      <h2 id="chartTitle">Analytics</h2>
+    </div>
+    <div id="chartContainer"></div>
   </div>
 </div>
 
@@ -387,7 +448,7 @@ btn.onclick=()=>{
  rec.onresult=e=>{
   const t=e.results[0][0].transcript;
   if(!t) return;
-  const m=t.match(/(.+)\s(\d+)/);
+  const m=t.match(/(.+?)\s+(\d+(?:[.,]\d+)?)/);
   if(!m) return;
   records.unshift({
    id:crypto.randomUUID(),
@@ -431,6 +492,7 @@ function deleteRecord(){
 function openEditPanel(){
  const record=records.find(r=>r.id===currentRecordId);
  if(!record) return;
+ document.getElementById('editItem').value=record.item;
  document.getElementById('editCategory').value=record.category;
  document.getElementById('editAmount').value=record.amount;
  document.getElementById('editDate').value=record.date;
@@ -446,6 +508,7 @@ function closeEditPanel(){
 function saveEdit(){
  const record=records.find(r=>r.id===currentRecordId);
  if(!record) return;
+ record.item=document.getElementById('editItem').value;
  record.category=document.getElementById('editCategory').value;
  record.amount=+document.getElementById('editAmount').value;
  record.date=document.getElementById('editDate').value;
@@ -463,8 +526,200 @@ document.getElementById('deleteBtn').onclick=deleteRecord;
 editPanel.onclick=(e)=>{
  if(e.target===editPanel) closeEditPanel();
 };
-document.getElementById('cancelEdit').onclick=closeEditPanel;
-document.getElementById('saveEdit').onclick=saveEdit;
+document.getElementById('cancelEdit').onclick=(e)=>{
+ e.stopPropagation();
+ closeEditPanel();
+};
+document.getElementById('saveEdit').onclick=(e)=>{
+ e.stopPropagation();
+ saveEdit();
+};
+
+// charts
+const chartPanel=document.getElementById('chartPanel');
+
+function openChart(type){
+ chartPanel.classList.add('show');
+ if(type==='month') showMonthChart();
+ else if(type==='year') showYearChart();
+}
+
+function closeChart(){
+ chartPanel.classList.remove('show');
+}
+
+document.getElementById('chartBack').onclick=closeChart;
+chartPanel.onclick=(e)=>{
+ if(e.target===chartPanel) closeChart();
+};
+
+function showMonthChart(){
+ const now=new Date();
+ const year=now.getFullYear();
+ const month=now.getMonth();
+ const daysInMonth=new Date(year,month+1,0).getDate();
+
+ document.getElementById('chartTitle').textContent='Monthly Analytics';
+
+ const dailyTotals={};
+ for(let d=1;d<=daysInMonth;d++){
+  const date=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  dailyTotals[date]=0;
+ }
+
+ records.forEach(r=>{
+  if(r.date.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)){
+   dailyTotals[r.date]=(dailyTotals[r.date]||0)+r.amount;
+  }
+ });
+
+ const values=Object.values(dailyTotals);
+ const maxVal=Math.max(...values,1);
+
+ let chartHTML='<h3>Daily Expenses</h3><div class="chart">';
+ for(let d=1;d<=daysInMonth;d++){
+  const date=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const val=dailyTotals[date];
+  const height=(val/maxVal)*100;
+  chartHTML+=`<div class="bar" style="height:${height}%" data-date="${date}"><div class="barLabel">${d}</div></div>`;
+ }
+ chartHTML+='</div><div id="dayDetails"></div>';
+
+ document.getElementById('chartContainer').innerHTML=chartHTML;
+
+ document.querySelectorAll('.bar').forEach(bar=>{
+  bar.onclick=()=>{
+   const date=bar.dataset.date;
+   showDayDetails(date);
+  };
+ });
+}
+
+function showYearChart(){
+ const now=new Date();
+ const year=now.getFullYear();
+
+ document.getElementById('chartTitle').textContent='Yearly Analytics';
+
+ const monthlyTotals={};
+ const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+ for(let m=0;m<12;m++){
+  const prefix=`${year}-${String(m+1).padStart(2,'0')}`;
+  monthlyTotals[prefix]=0;
+ }
+
+ records.forEach(r=>{
+  const prefix=r.date.slice(0,7);
+  if(r.date.startsWith(String(year))){
+   monthlyTotals[prefix]=(monthlyTotals[prefix]||0)+r.amount;
+  }
+ });
+
+ const values=Object.values(monthlyTotals);
+ const maxVal=Math.max(...values,1);
+
+ let chartHTML='<h3>Monthly Expenses</h3><div class="chart">';
+ for(let m=0;m<12;m++){
+  const prefix=`${year}-${String(m+1).padStart(2,'0')}`;
+  const val=monthlyTotals[prefix];
+  const height=(val/maxVal)*100;
+  chartHTML+=`<div class="bar" style="height:${height}%" data-month="${prefix}"><div class="barLabel">${monthNames[m]}</div></div>`;
+ }
+ chartHTML+='</div><div id="monthDetails"></div>';
+
+ document.getElementById('chartContainer').innerHTML=chartHTML;
+
+ document.querySelectorAll('.bar').forEach(bar=>{
+  bar.onclick=()=>{
+   const monthPrefix=bar.dataset.month;
+   showMonthDetails(monthPrefix);
+  };
+ });
+}
+
+function showDayDetails(date){
+ const dayRecords=records.filter(r=>r.date===date);
+ if(dayRecords.length===0){
+  document.getElementById('dayDetails').innerHTML='<div class="dayView"><h4>No expenses on this day</h4></div>';
+  return;
+ }
+
+ let html=`<div class="dayView"><h4>Expenses for ${date}</h4>`;
+ dayRecords.forEach(r=>{
+  html+=`
+   <div class="record">
+    <div class="icon">${ICONS[r.category]||'❓'}</div>
+    <div class="recMain">
+     <div class="recTitle">${r.item}</div>
+     <div class="recMeta">${r.category}</div>
+    </div>
+    <div class="recRight">
+     <div class="amount">${r.amount}</div>
+     <button class="menuBtn" data-id="${r.id}">⋮</button>
+    </div>
+   </div>`;
+ });
+ html+='</div>';
+
+ document.getElementById('dayDetails').innerHTML=html;
+
+ document.querySelectorAll('#dayDetails .menuBtn').forEach(btn=>{
+  btn.onclick=()=>{
+   currentRecordId=btn.dataset.id;
+   closeChart();
+   setTimeout(()=>actionOverlay.classList.add('show'),100);
+  };
+ });
+}
+
+function showMonthDetails(monthPrefix){
+ const monthRecords=records.filter(r=>r.date.startsWith(monthPrefix));
+ if(monthRecords.length===0){
+  document.getElementById('monthDetails').innerHTML='<div class="dayView"><h4>No expenses in this month</h4></div>';
+  return;
+ }
+
+ const dailyTotals={};
+ monthRecords.forEach(r=>{
+  dailyTotals[r.date]=(dailyTotals[r.date]||0)+r.amount;
+ });
+
+ let html=`<div class="dayView"><h4>Daily breakdown for ${monthPrefix}</h4>`;
+ Object.keys(dailyTotals).sort().forEach(date=>{
+  const dayRecords=records.filter(r=>r.date===date);
+  html+=`<div class="card" style="margin-bottom:8px;"><div class="label">${date}</div><div class="value">${dailyTotals[date]}</div></div>`;
+  dayRecords.forEach(r=>{
+   html+=`
+    <div class="record">
+     <div class="icon">${ICONS[r.category]||'❓'}</div>
+     <div class="recMain">
+      <div class="recTitle">${r.item}</div>
+      <div class="recMeta">${r.category}</div>
+     </div>
+     <div class="recRight">
+      <div class="amount">${r.amount}</div>
+      <button class="menuBtn" data-id="${r.id}">⋮</button>
+     </div>
+    </div>`;
+  });
+ });
+ html+='</div>';
+
+ document.getElementById('monthDetails').innerHTML=html;
+
+ document.querySelectorAll('#monthDetails .menuBtn').forEach(btn=>{
+  btn.onclick=()=>{
+   currentRecordId=btn.dataset.id;
+   closeChart();
+   setTimeout(()=>actionOverlay.classList.add('show'),100);
+  };
+ });
+}
+
+// make analytics buttons clickable
+document.getElementById('monthBtn').onclick=()=>openChart('month');
+document.getElementById('yearBtn').onclick=()=>openChart('year');
 
 render();
 </script>
