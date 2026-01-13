@@ -133,6 +133,117 @@ button.primary.recording{
   border:none;
   color:var(--muted);
   font-size:20px;
+  cursor:pointer;
+}
+
+/* modal & overlay */
+.overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  z-index:100;
+}
+.overlay.show{
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+.actionMenu{
+  background:var(--card);
+  border-radius:20px 20px 0 0;
+  padding:20px;
+  width:100%;
+  max-width:520px;
+}
+.actionMenu button{
+  width:100%;
+  padding:16px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-size:16px;
+  text-align:left;
+  border-radius:12px;
+  margin:6px 0;
+  cursor:pointer;
+}
+.actionMenu button:hover{
+  background:rgba(255,255,255,0.05);
+}
+.actionMenu button.danger{
+  color:var(--danger);
+}
+
+/* edit panel */
+.editPanel{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+}
+.editPanel.show{
+  display:flex;
+}
+.editForm{
+  background:var(--card);
+  border-radius:20px;
+  padding:24px;
+  width:90%;
+  max-width:400px;
+}
+.editForm h2{
+  margin:0 0 20px;
+  font-size:20px;
+}
+.formGroup{
+  margin-bottom:16px;
+}
+.formGroup label{
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:6px;
+}
+.formGroup input{
+  width:100%;
+  padding:12px;
+  background:var(--bg);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;
+  color:var(--text);
+  font-size:15px;
+}
+.formActions{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+}
+.formActions button{
+  flex:1;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+}
+.formActions .btnSave{
+  background:var(--accent);
+  color:#fff;
+}
+.formActions .btnCancel{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid rgba(255,255,255,0.1);
 }
 </style>
 </head>
@@ -166,6 +277,35 @@ button.primary.recording{
   <div class="status" id="status"></div>
 
   <div id="list"></div>
+</div>
+
+<div id="actionOverlay" class="overlay">
+  <div class="actionMenu">
+    <button id="editBtn">✏️ Edit</button>
+    <button id="deleteBtn" class="danger">🗑️ Delete</button>
+  </div>
+</div>
+
+<div id="editPanel" class="editPanel">
+  <div class="editForm">
+    <h2>Edit Expense</h2>
+    <div class="formGroup">
+      <label>Category</label>
+      <input type="text" id="editCategory">
+    </div>
+    <div class="formGroup">
+      <label>Amount</label>
+      <input type="number" id="editAmount">
+    </div>
+    <div class="formGroup">
+      <label>Date</label>
+      <input type="date" id="editDate">
+    </div>
+    <div class="formActions">
+      <button class="btnCancel" id="cancelEdit">Cancel</button>
+      <button class="btnSave" id="saveEdit">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -215,9 +355,10 @@ function render(){
     </div>
     <div class="recRight">
       <div class="amount">${r.amount}</div>
-      <button class="menuBtn">⋮</button>
+      <button class="menuBtn" data-id="${r.id}">⋮</button>
     </div>`;
    list.appendChild(row);
+   row.querySelector('.menuBtn').onclick=()=>openActionMenu(r.id);
   }
   if(r.date.slice(0,7)===today().slice(0,7)) m+=r.amount;
   if(r.date.slice(0,4)===today().slice(0,4)) y+=r.amount;
@@ -264,6 +405,66 @@ btn.onclick=()=>{
  btn.classList.add('recording');
  btn.textContent='⏺ Recording…';
 };
+
+// action menu & edit logic
+let currentRecordId=null;
+const actionOverlay=document.getElementById('actionOverlay');
+const editPanel=document.getElementById('editPanel');
+
+function openActionMenu(id){
+ currentRecordId=id;
+ actionOverlay.classList.add('show');
+}
+
+function closeActionMenu(){
+ actionOverlay.classList.remove('show');
+ currentRecordId=null;
+}
+
+function deleteRecord(){
+ records=records.filter(r=>r.id!==currentRecordId);
+ localStorage.setItem(KEY,JSON.stringify(records));
+ closeActionMenu();
+ render();
+}
+
+function openEditPanel(){
+ const record=records.find(r=>r.id===currentRecordId);
+ if(!record) return;
+ document.getElementById('editCategory').value=record.category;
+ document.getElementById('editAmount').value=record.amount;
+ document.getElementById('editDate').value=record.date;
+ closeActionMenu();
+ editPanel.classList.add('show');
+}
+
+function closeEditPanel(){
+ editPanel.classList.remove('show');
+ currentRecordId=null;
+}
+
+function saveEdit(){
+ const record=records.find(r=>r.id===currentRecordId);
+ if(!record) return;
+ record.category=document.getElementById('editCategory').value;
+ record.amount=+document.getElementById('editAmount').value;
+ record.date=document.getElementById('editDate').value;
+ localStorage.setItem(KEY,JSON.stringify(records));
+ closeEditPanel();
+ render();
+}
+
+// event listeners
+actionOverlay.onclick=(e)=>{
+ if(e.target===actionOverlay) closeActionMenu();
+};
+document.getElementById('editBtn').onclick=openEditPanel;
+document.getElementById('deleteBtn').onclick=deleteRecord;
+editPanel.onclick=(e)=>{
+ if(e.target===editPanel) closeEditPanel();
+};
+document.getElementById('cancelEdit').onclick=closeEditPanel;
+document.getElementById('saveEdit').onclick=saveEdit;
 
 render();
 </script>
