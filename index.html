@@ -83,6 +83,11 @@ button.primary{
 }
 button.primary.recording{
   background:var(--danger);
+  animation:pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:0.6}
 }
 .status{
   text-align:center;
@@ -157,7 +162,7 @@ button.primary.recording{
     </div>
   </div>
 
-  <button id="recBtn" class="primary">🎤 Начать запись</button>
+  <button id="recBtn" class="primary">🎤 Start recording</button>
   <div class="status" id="status"></div>
 
   <div id="list"></div>
@@ -223,16 +228,24 @@ function render(){
 }
 
 let rec,isRec=false;
-document.getElementById('recBtn').onclick=()=>{
+const btn=document.getElementById('recBtn');
+
+function stopRecording(){
+ isRec=false;
+ btn.classList.remove('recording');
+ btn.textContent='🎤 Start recording';
+}
+
+btn.onclick=()=>{
  if(isRec){
   rec.stop();
-  isRec=false;
   return;
  }
  rec=new webkitSpeechRecognition();
  rec.lang='ru-RU';
  rec.onresult=e=>{
   const t=e.results[0][0].transcript;
+  if(!t) return;
   const m=t.match(/(.+)\s(\d+)/);
   if(!m) return;
   records.unshift({
@@ -245,8 +258,11 @@ document.getElementById('recBtn').onclick=()=>{
   localStorage.setItem(KEY,JSON.stringify(records));
   render();
  };
+ rec.onend=stopRecording;
  rec.start();
  isRec=true;
+ btn.classList.add('recording');
+ btn.textContent='⏺ Recording…';
 };
 
 render();
