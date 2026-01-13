@@ -603,12 +603,11 @@ function deleteRecord(){
  records=records.filter(r=>r.id!==currentRecordId);
  localStorage.setItem(KEY,JSON.stringify(records));
  closeActionMenu();
- render();
  if(currentChartType && selectedPeriod){
-  setTimeout(()=>{
-   if(currentChartType==='month') showMonthChart();
-   else if(currentChartType==='year') showYearChart();
-  },100);
+  if(currentChartType==='month') showMonthChart();
+  else if(currentChartType==='year') showYearChart();
+ }else{
+  render();
  }
 }
 
@@ -644,12 +643,11 @@ function saveEdit(){
  record.date=dateVal;
  localStorage.setItem(KEY,JSON.stringify(records));
  closeEditPanel();
- render();
  if(currentChartType && selectedPeriod){
-  setTimeout(()=>{
-   if(currentChartType==='month') showMonthChart();
-   else if(currentChartType==='year') showYearChart();
-  },100);
+  if(currentChartType==='month') showMonthChart();
+  else if(currentChartType==='year') showYearChart();
+ }else{
+  render();
  }
 }
 
@@ -842,8 +840,7 @@ function showExpensesForDate(date){
  document.querySelectorAll('#expenseList .menuBtn').forEach(btn=>{
   btn.onclick=()=>{
    currentRecordId=btn.dataset.id;
-   closeChart();
-   setTimeout(()=>actionOverlay.classList.add('show'),100);
+   actionOverlay.classList.add('show');
   };
  });
 }
@@ -888,8 +885,7 @@ function showExpensesForMonth(monthPrefix){
  document.querySelectorAll('#expenseList .menuBtn').forEach(btn=>{
   btn.onclick=()=>{
    currentRecordId=btn.dataset.id;
-   closeChart();
-   setTimeout(()=>actionOverlay.classList.add('show'),100);
+   actionOverlay.classList.add('show');
   };
  });
 }
