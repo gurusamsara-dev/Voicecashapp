@@ -593,33 +593,36 @@ btn.onclick=()=>{
   const words=t.toLowerCase().split(/\s+/);
   let total=0;
   let current=0;
-  let lastWasNumber=false;
-  let numberStartIndex=-1;
+  let foundNumber=false;
+  let firstNumberIndex=-1;
 
-  for(let i=words.length-1;i>=0;i--){
+  for(let i=0;i<words.length;i++){
    const word=words[i].replace(/[.,!?]/g,'');
    if(dict[word]!==undefined){
     const val=dict[word];
-    if(numberStartIndex===-1) numberStartIndex=i;
-    if(val>=1000){
-     current+=val;
-     total+=current*val;
+    if(firstNumberIndex===-1) firstNumberIndex=i;
+    foundNumber=true;
+
+    if(val>=1000000){
+     total+=(current||1)*val;
+     current=0;
+    }else if(val>=1000){
+     total+=(current||1)*val;
      current=0;
     }else if(val>=100){
-     current+=val;
+     current=(current||1)*val;
     }else{
      current+=val;
     }
-    lastWasNumber=true;
-   }else if(lastWasNumber){
+   }else if(foundNumber){
     break;
    }
   }
 
-  if(lastWasNumber && numberStartIndex>=0){
+  if(foundNumber && firstNumberIndex>=0){
    total+=current;
    if(total>0){
-    t=words.slice(0,numberStartIndex).join(' ')+' '+total;
+    t=words.slice(0,firstNumberIndex).join(' ')+' '+total;
    }
   }
 
