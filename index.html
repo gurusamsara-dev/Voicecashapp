@@ -449,20 +449,20 @@ button.primary.recording{
   <div class="editForm">
     <h2>Edit Expense</h2>
     <div class="formGroup">
-      <label>Item Name</label>
+      <label id="labelEditName">Name</label>
       <input type="text" id="editItem">
     </div>
     <div class="formGroup">
-      <label>Category</label>
+      <label id="labelEditCategory">Category</label>
       <input type="text" id="editCategory">
     </div>
     <div class="formGroup">
-      <label>Amount</label>
+      <label id="labelEditAmount">Amount</label>
       <input type="number" id="editAmount">
     </div>
     <div class="formGroup">
-      <label>Date</label>
-      <input type="date" id="editDate">
+      <label id="labelEditDate">Date & Time</label>
+      <input type="datetime-local" id="editDate">
     </div>
     <div class="formActions">
       <button class="btnCancel" id="cancelEdit">Cancel</button>
@@ -514,9 +514,11 @@ function today(){
 function render(){
  let t=0,m=0,y=0;
  const list=document.getElementById('list');
+ const todayStr=today();
  list.innerHTML='';
  records.forEach(r=>{
-  if(r.date===today()){
+  const recDate=r.date.slice(0,10);
+  if(recDate===todayStr){
    t+=r.amount;
    const row=document.createElement('div');
    row.className='record';
@@ -533,8 +535,8 @@ function render(){
    list.appendChild(row);
    row.querySelector('.menuBtn').onclick=()=>openActionMenu(r.id);
   }
-  if(r.date.slice(0,7)===today().slice(0,7)) m+=r.amount;
-  if(r.date.slice(0,4)===today().slice(0,4)) y+=r.amount;
+  if(recDate.slice(0,7)===todayStr.slice(0,7)) m+=r.amount;
+  if(recDate.slice(0,4)===todayStr.slice(0,4)) y+=r.amount;
  });
  document.getElementById('sumToday').textContent=t;
  document.getElementById('sumMonth').textContent=m;
@@ -616,7 +618,9 @@ function openEditPanel(){
  document.getElementById('editItem').value=record.item;
  document.getElementById('editCategory').value=record.category;
  document.getElementById('editAmount').value=record.amount;
- document.getElementById('editDate').value=record.date;
+ let dateValue=record.date;
+ if(dateValue && dateValue.length===10) dateValue+='T00:00';
+ document.getElementById('editDate').value=dateValue;
  closeActionMenu();
  editPanel.classList.add('show');
 }
@@ -629,10 +633,15 @@ function closeEditPanel(){
 function saveEdit(){
  const record=records.find(r=>r.id===currentRecordId);
  if(!record) return;
- record.item=document.getElementById('editItem').value;
- record.category=document.getElementById('editCategory').value;
- record.amount=+document.getElementById('editAmount').value;
- record.date=document.getElementById('editDate').value;
+ const itemVal=document.getElementById('editItem').value.trim();
+ const catVal=document.getElementById('editCategory').value.trim();
+ const amountVal=document.getElementById('editAmount').value;
+ const dateVal=document.getElementById('editDate').value;
+ if(!itemVal || !catVal || !amountVal || !dateVal) return;
+ record.item=itemVal;
+ record.category=catVal;
+ record.amount=+amountVal;
+ record.date=dateVal;
  localStorage.setItem(KEY,JSON.stringify(records));
  closeEditPanel();
  render();
@@ -701,8 +710,9 @@ function showMonthChart(){
  }
 
  records.forEach(r=>{
-  if(r.date.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)){
-   dailyTotals[r.date]=(dailyTotals[r.date]||0)+r.amount;
+  const recDate=r.date.slice(0,10);
+  if(recDate.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)){
+   dailyTotals[recDate]=(dailyTotals[recDate]||0)+r.amount;
   }
  });
 
@@ -759,8 +769,9 @@ function showYearChart(){
  }
 
  records.forEach(r=>{
-  const prefix=r.date.slice(0,7);
-  if(r.date.startsWith(String(year))){
+  const recDate=r.date.slice(0,10);
+  const prefix=recDate.slice(0,7);
+  if(recDate.startsWith(String(year))){
    monthlyTotals[prefix]=(monthlyTotals[prefix]||0)+r.amount;
   }
  });
@@ -802,7 +813,7 @@ function showYearChart(){
 }
 
 function showExpensesForDate(date){
- const dayRecords=records.filter(r=>r.date===date);
+ const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
  const container=document.getElementById('expenseList');
 
  if(dayRecords.length===0){
@@ -838,7 +849,7 @@ function showExpensesForDate(date){
 }
 
 function showExpensesForMonth(monthPrefix){
- const monthRecords=records.filter(r=>r.date.startsWith(monthPrefix));
+ const monthRecords=records.filter(r=>r.date.slice(0,10).startsWith(monthPrefix));
  const container=document.getElementById('expenseList');
 
  if(monthRecords.length===0){
@@ -848,12 +859,13 @@ function showExpensesForMonth(monthPrefix){
 
  const dailyTotals={};
  monthRecords.forEach(r=>{
-  dailyTotals[r.date]=(dailyTotals[r.date]||0)+r.amount;
+  const recDate=r.date.slice(0,10);
+  dailyTotals[recDate]=(dailyTotals[recDate]||0)+r.amount;
  });
 
  let html=`<h4>Expenses for ${monthPrefix}</h4>`;
  Object.keys(dailyTotals).sort().forEach(date=>{
-  const dayRecords=records.filter(r=>r.date===date);
+  const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
   html+=`<div class="card" style="margin-bottom:8px;"><div class="label">${date}</div><div class="value">${dailyTotals[date]}</div></div>`;
   dayRecords.forEach(r=>{
    html+=`
@@ -901,9 +913,10 @@ const translations={
   editBtn:'✏️ Edit',
   deleteBtn:'🗑️ Delete',
   editTitle:'Edit Expense',
+  editItemName:'Name',
   editCategory:'Category',
   editAmount:'Amount',
-  editDate:'Date',
+  editDate:'Date & Time',
   btnCancel:'Cancel',
   btnSave:'Save',
   settingsTitle:'Settings',
@@ -922,9 +935,10 @@ const translations={
   editBtn:'✏️ Редактировать',
   deleteBtn:'🗑️ Удалить',
   editTitle:'Редактировать расход',
+  editItemName:'Название',
   editCategory:'Категория',
   editAmount:'Сумма',
-  editDate:'Дата',
+  editDate:'Дата и время',
   btnCancel:'Отмена',
   btnSave:'Сохранить',
   settingsTitle:'Настройки',
@@ -943,9 +957,10 @@ const translations={
   editBtn:'✏️ Editar',
   deleteBtn:'🗑️ Eliminar',
   editTitle:'Editar gasto',
+  editItemName:'Nombre',
   editCategory:'Categoría',
   editAmount:'Cantidad',
-  editDate:'Fecha',
+  editDate:'Fecha y hora',
   btnCancel:'Cancelar',
   btnSave:'Guardar',
   settingsTitle:'Configuración',
@@ -964,9 +979,10 @@ const translations={
   editBtn:'✏️ Modifier',
   deleteBtn:'🗑️ Supprimer',
   editTitle:'Modifier la dépense',
+  editItemName:'Nom',
   editCategory:'Catégorie',
   editAmount:'Montant',
-  editDate:'Date',
+  editDate:'Date et heure',
   btnCancel:'Annuler',
   btnSave:'Enregistrer',
   settingsTitle:'Paramètres',
@@ -985,9 +1001,10 @@ const translations={
   editBtn:'✏️ Bearbeiten',
   deleteBtn:'🗑️ Löschen',
   editTitle:'Ausgabe bearbeiten',
+  editItemName:'Name',
   editCategory:'Kategorie',
   editAmount:'Betrag',
-  editDate:'Datum',
+  editDate:'Datum und Uhrzeit',
   btnCancel:'Abbrechen',
   btnSave:'Speichern',
   settingsTitle:'Einstellungen',
@@ -1006,9 +1023,10 @@ const translations={
   editBtn:'✏️ Modifica',
   deleteBtn:'🗑️ Elimina',
   editTitle:'Modifica spesa',
+  editItemName:'Nome',
   editCategory:'Categoria',
   editAmount:'Importo',
-  editDate:'Data',
+  editDate:'Data e ora',
   btnCancel:'Annulla',
   btnSave:'Salva',
   settingsTitle:'Impostazioni',
@@ -1027,9 +1045,10 @@ const translations={
   editBtn:'✏️ Editar',
   deleteBtn:'🗑️ Excluir',
   editTitle:'Editar despesa',
+  editItemName:'Nome',
   editCategory:'Categoria',
   editAmount:'Valor',
-  editDate:'Data',
+  editDate:'Data e hora',
   btnCancel:'Cancelar',
   btnSave:'Salvar',
   settingsTitle:'Configurações',
@@ -1048,9 +1067,10 @@ const translations={
   editBtn:'✏️ 编辑',
   deleteBtn:'🗑️ 删除',
   editTitle:'编辑支出',
+  editItemName:'名称',
   editCategory:'类别',
   editAmount:'金额',
-  editDate:'日期',
+  editDate:'日期和时间',
   btnCancel:'取消',
   btnSave:'保存',
   settingsTitle:'设置',
@@ -1069,9 +1089,10 @@ const translations={
   editBtn:'✏️ 編集',
   deleteBtn:'🗑️ 削除',
   editTitle:'支出を編集',
+  editItemName:'名前',
   editCategory:'カテゴリー',
   editAmount:'金額',
-  editDate:'日付',
+  editDate:'日時',
   btnCancel:'キャンセル',
   btnSave:'保存',
   settingsTitle:'設定',
@@ -1090,9 +1111,10 @@ const translations={
   editBtn:'✏️ 편집',
   deleteBtn:'🗑️ 삭제',
   editTitle:'지출 편집',
+  editItemName:'이름',
   editCategory:'카테고리',
   editAmount:'금액',
-  editDate:'날짜',
+  editDate:'날짜 및 시간',
   btnCancel:'취소',
   btnSave:'저장',
   settingsTitle:'설정',
@@ -1111,9 +1133,10 @@ const translations={
   editBtn:'✏️ تعديل',
   deleteBtn:'🗑️ حذف',
   editTitle:'تعديل النفقات',
+  editItemName:'الاسم',
   editCategory:'الفئة',
   editAmount:'المبلغ',
-  editDate:'التاريخ',
+  editDate:'التاريخ والوقت',
   btnCancel:'إلغاء',
   btnSave:'حفظ',
   settingsTitle:'الإعدادات',
@@ -1132,9 +1155,10 @@ const translations={
   editBtn:'✏️ संपादित करें',
   deleteBtn:'🗑️ हटाएं',
   editTitle:'खर्च संपादित करें',
+  editItemName:'नाम',
   editCategory:'श्रेणी',
   editAmount:'राशि',
-  editDate:'तारीख',
+  editDate:'तारीख और समय',
   btnCancel:'रद्द करें',
   btnSave:'सहेजें',
   settingsTitle:'सेटिंग्स',
@@ -1153,9 +1177,10 @@ const translations={
   editBtn:'✏️ Düzenle',
   deleteBtn:'🗑️ Sil',
   editTitle:'Harcamayı Düzenle',
+  editItemName:'İsim',
   editCategory:'Kategori',
   editAmount:'Tutar',
-  editDate:'Tarih',
+  editDate:'Tarih ve saat',
   btnCancel:'İptal',
   btnSave:'Kaydet',
   settingsTitle:'Ayarlar',
@@ -1174,9 +1199,10 @@ const translations={
   editBtn:'✏️ Bewerken',
   deleteBtn:'🗑️ Verwijderen',
   editTitle:'Uitgave bewerken',
+  editItemName:'Naam',
   editCategory:'Categorie',
   editAmount:'Bedrag',
-  editDate:'Datum',
+  editDate:'Datum en tijd',
   btnCancel:'Annuleren',
   btnSave:'Opslaan',
   settingsTitle:'Instellingen',
@@ -1195,9 +1221,10 @@ const translations={
   editBtn:'✏️ Edytuj',
   deleteBtn:'🗑️ Usuń',
   editTitle:'Edytuj wydatek',
+  editItemName:'Nazwa',
   editCategory:'Kategoria',
   editAmount:'Kwota',
-  editDate:'Data',
+  editDate:'Data i godzina',
   btnCancel:'Anuluj',
   btnSave:'Zapisz',
   settingsTitle:'Ustawienia',
@@ -1220,9 +1247,10 @@ function applyTranslations(){
  document.getElementById('editBtn').textContent=t.editBtn;
  document.getElementById('deleteBtn').textContent=t.deleteBtn;
  document.querySelectorAll('.editForm h2')[0].textContent=t.editTitle;
- document.querySelectorAll('.editForm label')[0].textContent=t.editCategory;
- document.querySelectorAll('.editForm label')[1].textContent=t.editAmount;
- document.querySelectorAll('.editForm label')[2].textContent=t.editDate;
+ document.getElementById('labelEditName').textContent=t.editItemName;
+ document.getElementById('labelEditCategory').textContent=t.editCategory;
+ document.getElementById('labelEditAmount').textContent=t.editAmount;
+ document.getElementById('labelEditDate').textContent=t.editDate;
  document.getElementById('cancelEdit').textContent=t.btnCancel;
  document.getElementById('saveEdit').textContent=t.btnSave;
  document.getElementById('settingsTitle').textContent=t.settingsTitle;
