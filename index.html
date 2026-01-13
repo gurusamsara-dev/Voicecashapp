@@ -292,38 +292,137 @@ button.primary.recording{
   margin:0 0 12px;
   font-size:16px;
 }
+
+/* settings */
+.settingsBtn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-size:24px;
+  cursor:pointer;
+  padding:8px;
+}
+.page{
+  display:none;
+}
+.page.active{
+  display:block;
+}
+.settingsPage{
+  max-width:520px;
+  margin:auto;
+  padding:16px;
+}
+.settingsHeader{
+  display:flex;
+  align-items:center;
+  margin-bottom:24px;
+}
+.backBtn{
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-size:24px;
+  cursor:pointer;
+  padding:8px;
+  margin-right:12px;
+}
+.settingsHeader h2{
+  margin:0;
+  font-size:24px;
+}
+.settingItem{
+  background:var(--card);
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:12px;
+}
+.settingLabel{
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:8px;
+}
+.settingItem select{
+  width:100%;
+  padding:12px;
+  background:var(--bg);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;
+  color:var(--text);
+  font-size:15px;
+  cursor:pointer;
+}
+.settingItem select option{
+  background:var(--bg);
+  color:var(--text);
+}
 </style>
 </head>
 
 <body>
-<div class="app">
-  <h1>🎙 Voice Cash</h1>
+<button class="settingsBtn" id="settingsBtn">⚙️</button>
 
-  <div class="topbar">
-    <button class="active">Траты за день</button>
-    <button>Аналитика месяц</button>
-    <button>Аналитика год</button>
+<div id="mainPage" class="page active">
+  <div class="app">
+    <h1 id="appTitle">🎙 Voice Cash</h1>
+
+    <div class="topbar">
+      <button class="active" id="todayBtn">Траты за день</button>
+      <button id="monthBtn">Аналитика месяц</button>
+      <button id="yearBtn">Аналитика год</button>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="label" id="labelToday">Сегодня</div>
+        <div class="value" id="sumToday">0</div>
+      </div>
+      <div class="card">
+        <div class="label" id="labelMonth">Месяц</div>
+        <div class="value" id="sumMonth">0</div>
+      </div>
+      <div class="card">
+        <div class="label" id="labelYear">Год</div>
+        <div class="value" id="sumYear">0</div>
+      </div>
+    </div>
+
+    <button id="recBtn" class="primary">🎤 Start recording</button>
+    <div class="status" id="status"></div>
+
+    <div id="list"></div>
+  </div>
+</div>
+
+<div id="settingsPage" class="page settingsPage">
+  <div class="settingsHeader">
+    <button class="backBtn" id="backBtn">←</button>
+    <h2 id="settingsTitle">Settings</h2>
   </div>
 
-  <div class="row">
-    <div class="card">
-      <div class="label">Сегодня</div>
-      <div class="value" id="sumToday">0</div>
-    </div>
-    <div class="card">
-      <div class="label">Месяц</div>
-      <div class="value" id="sumMonth">0</div>
-    </div>
-    <div class="card">
-      <div class="label">Год</div>
-      <div class="value" id="sumYear">0</div>
-    </div>
+  <div class="settingItem">
+    <div class="settingLabel" id="langLabel">Language</div>
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="ru">Русский</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="ar">العربية</option>
+      <option value="hi">हिन्दी</option>
+      <option value="tr">Türkçe</option>
+      <option value="nl">Nederlands</option>
+      <option value="pl">Polski</option>
+    </select>
   </div>
-
-  <button id="recBtn" class="primary">🎤 Start recording</button>
-  <div class="status" id="status"></div>
-
-  <div id="list"></div>
 </div>
 
 <div id="actionOverlay" class="overlay">
@@ -435,7 +534,8 @@ const btn=document.getElementById('recBtn');
 function stopRecording(){
  isRec=false;
  btn.classList.remove('recording');
- btn.textContent='🎤 Start recording';
+ const t=translations[currentLang]||translations.en;
+ btn.textContent=t.recBtn;
 }
 
 btn.onclick=()=>{
@@ -444,7 +544,8 @@ btn.onclick=()=>{
   return;
  }
  rec=new webkitSpeechRecognition();
- rec.lang='ru-RU';
+ const langCodes={en:'en-US',ru:'ru-RU',es:'es-ES',fr:'fr-FR',de:'de-DE',it:'it-IT',pt:'pt-PT',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',ar:'ar-SA',hi:'hi-IN',tr:'tr-TR',nl:'nl-NL',pl:'pl-PL'};
+ rec.lang=langCodes[currentLang]||'en-US';
  rec.onresult=e=>{
   const t=e.results[0][0].transcript;
   if(!t) return;
@@ -464,7 +565,8 @@ btn.onclick=()=>{
  rec.start();
  isRec=true;
  btn.classList.add('recording');
- btn.textContent='⏺ Recording…';
+ const t=translations[currentLang]||translations.en;
+ btn.textContent=t.recBtnActive;
 };
 
 // action menu & edit logic
@@ -721,6 +823,368 @@ function showMonthDetails(monthPrefix){
 document.getElementById('monthBtn').onclick=()=>openChart('month');
 document.getElementById('yearBtn').onclick=()=>openChart('year');
 
+// translations
+const translations={
+ en:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Daily Expenses',
+  monthBtn:'Monthly Analytics',
+  yearBtn:'Yearly Analytics',
+  labelToday:'Today',
+  labelMonth:'Month',
+  labelYear:'Year',
+  recBtn:'🎤 Start recording',
+  recBtnActive:'⏺ Recording…',
+  editBtn:'✏️ Edit',
+  deleteBtn:'🗑️ Delete',
+  editTitle:'Edit Expense',
+  editCategory:'Category',
+  editAmount:'Amount',
+  editDate:'Date',
+  btnCancel:'Cancel',
+  btnSave:'Save',
+  settingsTitle:'Settings',
+  langLabel:'Language'
+ },
+ ru:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Траты за день',
+  monthBtn:'Аналитика месяц',
+  yearBtn:'Аналитика год',
+  labelToday:'Сегодня',
+  labelMonth:'Месяц',
+  labelYear:'Год',
+  recBtn:'🎤 Начать запись',
+  recBtnActive:'⏺ Запись…',
+  editBtn:'✏️ Редактировать',
+  deleteBtn:'🗑️ Удалить',
+  editTitle:'Редактировать расход',
+  editCategory:'Категория',
+  editAmount:'Сумма',
+  editDate:'Дата',
+  btnCancel:'Отмена',
+  btnSave:'Сохранить',
+  settingsTitle:'Настройки',
+  langLabel:'Язык'
+ },
+ es:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Gastos diarios',
+  monthBtn:'Análisis mensual',
+  yearBtn:'Análisis anual',
+  labelToday:'Hoy',
+  labelMonth:'Mes',
+  labelYear:'Año',
+  recBtn:'🎤 Iniciar grabación',
+  recBtnActive:'⏺ Grabando…',
+  editBtn:'✏️ Editar',
+  deleteBtn:'🗑️ Eliminar',
+  editTitle:'Editar gasto',
+  editCategory:'Categoría',
+  editAmount:'Cantidad',
+  editDate:'Fecha',
+  btnCancel:'Cancelar',
+  btnSave:'Guardar',
+  settingsTitle:'Configuración',
+  langLabel:'Idioma'
+ },
+ fr:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Dépenses quotidiennes',
+  monthBtn:'Analyse mensuelle',
+  yearBtn:'Analyse annuelle',
+  labelToday:'Aujourd\'hui',
+  labelMonth:'Mois',
+  labelYear:'Année',
+  recBtn:'🎤 Démarrer l\'enregistrement',
+  recBtnActive:'⏺ Enregistrement…',
+  editBtn:'✏️ Modifier',
+  deleteBtn:'🗑️ Supprimer',
+  editTitle:'Modifier la dépense',
+  editCategory:'Catégorie',
+  editAmount:'Montant',
+  editDate:'Date',
+  btnCancel:'Annuler',
+  btnSave:'Enregistrer',
+  settingsTitle:'Paramètres',
+  langLabel:'Langue'
+ },
+ de:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Tägliche Ausgaben',
+  monthBtn:'Monatsanalyse',
+  yearBtn:'Jahresanalyse',
+  labelToday:'Heute',
+  labelMonth:'Monat',
+  labelYear:'Jahr',
+  recBtn:'🎤 Aufnahme starten',
+  recBtnActive:'⏺ Aufnahme läuft…',
+  editBtn:'✏️ Bearbeiten',
+  deleteBtn:'🗑️ Löschen',
+  editTitle:'Ausgabe bearbeiten',
+  editCategory:'Kategorie',
+  editAmount:'Betrag',
+  editDate:'Datum',
+  btnCancel:'Abbrechen',
+  btnSave:'Speichern',
+  settingsTitle:'Einstellungen',
+  langLabel:'Sprache'
+ },
+ it:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Spese giornaliere',
+  monthBtn:'Analisi mensile',
+  yearBtn:'Analisi annuale',
+  labelToday:'Oggi',
+  labelMonth:'Mese',
+  labelYear:'Anno',
+  recBtn:'🎤 Avvia registrazione',
+  recBtnActive:'⏺ Registrazione…',
+  editBtn:'✏️ Modifica',
+  deleteBtn:'🗑️ Elimina',
+  editTitle:'Modifica spesa',
+  editCategory:'Categoria',
+  editAmount:'Importo',
+  editDate:'Data',
+  btnCancel:'Annulla',
+  btnSave:'Salva',
+  settingsTitle:'Impostazioni',
+  langLabel:'Lingua'
+ },
+ pt:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Despesas diárias',
+  monthBtn:'Análise mensal',
+  yearBtn:'Análise anual',
+  labelToday:'Hoje',
+  labelMonth:'Mês',
+  labelYear:'Ano',
+  recBtn:'🎤 Iniciar gravação',
+  recBtnActive:'⏺ Gravando…',
+  editBtn:'✏️ Editar',
+  deleteBtn:'🗑️ Excluir',
+  editTitle:'Editar despesa',
+  editCategory:'Categoria',
+  editAmount:'Valor',
+  editDate:'Data',
+  btnCancel:'Cancelar',
+  btnSave:'Salvar',
+  settingsTitle:'Configurações',
+  langLabel:'Idioma'
+ },
+ zh:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'每日支出',
+  monthBtn:'月度分析',
+  yearBtn:'年度分析',
+  labelToday:'今天',
+  labelMonth:'月',
+  labelYear:'年',
+  recBtn:'🎤 开始录音',
+  recBtnActive:'⏺ 录音中…',
+  editBtn:'✏️ 编辑',
+  deleteBtn:'🗑️ 删除',
+  editTitle:'编辑支出',
+  editCategory:'类别',
+  editAmount:'金额',
+  editDate:'日期',
+  btnCancel:'取消',
+  btnSave:'保存',
+  settingsTitle:'设置',
+  langLabel:'语言'
+ },
+ ja:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'日次支出',
+  monthBtn:'月次分析',
+  yearBtn:'年次分析',
+  labelToday:'今日',
+  labelMonth:'月',
+  labelYear:'年',
+  recBtn:'🎤 録音開始',
+  recBtnActive:'⏺ 録音中…',
+  editBtn:'✏️ 編集',
+  deleteBtn:'🗑️ 削除',
+  editTitle:'支出を編集',
+  editCategory:'カテゴリー',
+  editAmount:'金額',
+  editDate:'日付',
+  btnCancel:'キャンセル',
+  btnSave:'保存',
+  settingsTitle:'設定',
+  langLabel:'言語'
+ },
+ ko:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'일일 지출',
+  monthBtn:'월간 분석',
+  yearBtn:'연간 분석',
+  labelToday:'오늘',
+  labelMonth:'월',
+  labelYear:'년',
+  recBtn:'🎤 녹음 시작',
+  recBtnActive:'⏺ 녹음 중…',
+  editBtn:'✏️ 편집',
+  deleteBtn:'🗑️ 삭제',
+  editTitle:'지출 편집',
+  editCategory:'카테고리',
+  editAmount:'금액',
+  editDate:'날짜',
+  btnCancel:'취소',
+  btnSave:'저장',
+  settingsTitle:'설정',
+  langLabel:'언어'
+ },
+ ar:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'النفقات اليومية',
+  monthBtn:'التحليل الشهري',
+  yearBtn:'التحليل السنوي',
+  labelToday:'اليوم',
+  labelMonth:'الشهر',
+  labelYear:'السنة',
+  recBtn:'🎤 بدء التسجيل',
+  recBtnActive:'⏺ جاري التسجيل…',
+  editBtn:'✏️ تعديل',
+  deleteBtn:'🗑️ حذف',
+  editTitle:'تعديل النفقات',
+  editCategory:'الفئة',
+  editAmount:'المبلغ',
+  editDate:'التاريخ',
+  btnCancel:'إلغاء',
+  btnSave:'حفظ',
+  settingsTitle:'الإعدادات',
+  langLabel:'اللغة'
+ },
+ hi:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'दैनिक खर्च',
+  monthBtn:'मासिक विश्लेषण',
+  yearBtn:'वार्षिक विश्लेषण',
+  labelToday:'आज',
+  labelMonth:'महीना',
+  labelYear:'वर्ष',
+  recBtn:'🎤 रिकॉर्डिंग शुरू करें',
+  recBtnActive:'⏺ रिकॉर्ड हो रहा है…',
+  editBtn:'✏️ संपादित करें',
+  deleteBtn:'🗑️ हटाएं',
+  editTitle:'खर्च संपादित करें',
+  editCategory:'श्रेणी',
+  editAmount:'राशि',
+  editDate:'तारीख',
+  btnCancel:'रद्द करें',
+  btnSave:'सहेजें',
+  settingsTitle:'सेटिंग्स',
+  langLabel:'भाषा'
+ },
+ tr:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Günlük Harcamalar',
+  monthBtn:'Aylık Analiz',
+  yearBtn:'Yıllık Analiz',
+  labelToday:'Bugün',
+  labelMonth:'Ay',
+  labelYear:'Yıl',
+  recBtn:'🎤 Kaydı başlat',
+  recBtnActive:'⏺ Kaydediliyor…',
+  editBtn:'✏️ Düzenle',
+  deleteBtn:'🗑️ Sil',
+  editTitle:'Harcamayı Düzenle',
+  editCategory:'Kategori',
+  editAmount:'Tutar',
+  editDate:'Tarih',
+  btnCancel:'İptal',
+  btnSave:'Kaydet',
+  settingsTitle:'Ayarlar',
+  langLabel:'Dil'
+ },
+ nl:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Dagelijkse uitgaven',
+  monthBtn:'Maandanalyse',
+  yearBtn:'Jaaranalyse',
+  labelToday:'Vandaag',
+  labelMonth:'Maand',
+  labelYear:'Jaar',
+  recBtn:'🎤 Start opname',
+  recBtnActive:'⏺ Opnemen…',
+  editBtn:'✏️ Bewerken',
+  deleteBtn:'🗑️ Verwijderen',
+  editTitle:'Uitgave bewerken',
+  editCategory:'Categorie',
+  editAmount:'Bedrag',
+  editDate:'Datum',
+  btnCancel:'Annuleren',
+  btnSave:'Opslaan',
+  settingsTitle:'Instellingen',
+  langLabel:'Taal'
+ },
+ pl:{
+  appTitle:'🎙 Voice Cash',
+  todayBtn:'Wydatki dzienne',
+  monthBtn:'Analiza miesięczna',
+  yearBtn:'Analiza roczna',
+  labelToday:'Dzisiaj',
+  labelMonth:'Miesiąc',
+  labelYear:'Rok',
+  recBtn:'🎤 Rozpocznij nagrywanie',
+  recBtnActive:'⏺ Nagrywanie…',
+  editBtn:'✏️ Edytuj',
+  deleteBtn:'🗑️ Usuń',
+  editTitle:'Edytuj wydatek',
+  editCategory:'Kategoria',
+  editAmount:'Kwota',
+  editDate:'Data',
+  btnCancel:'Anuluj',
+  btnSave:'Zapisz',
+  settingsTitle:'Ustawienia',
+  langLabel:'Język'
+ }
+};
+
+let currentLang=localStorage.getItem('lang')||'ru';
+
+function applyTranslations(){
+ const t=translations[currentLang]||translations.en;
+ document.getElementById('appTitle').textContent=t.appTitle;
+ document.getElementById('todayBtn').textContent=t.todayBtn;
+ document.getElementById('monthBtn').textContent=t.monthBtn;
+ document.getElementById('yearBtn').textContent=t.yearBtn;
+ document.getElementById('labelToday').textContent=t.labelToday;
+ document.getElementById('labelMonth').textContent=t.labelMonth;
+ document.getElementById('labelYear').textContent=t.labelYear;
+ if(!isRec) document.getElementById('recBtn').textContent=t.recBtn;
+ document.getElementById('editBtn').textContent=t.editBtn;
+ document.getElementById('deleteBtn').textContent=t.deleteBtn;
+ document.querySelectorAll('.editForm h2')[0].textContent=t.editTitle;
+ document.querySelectorAll('.editForm label')[0].textContent=t.editCategory;
+ document.querySelectorAll('.editForm label')[1].textContent=t.editAmount;
+ document.querySelectorAll('.editForm label')[2].textContent=t.editDate;
+ document.getElementById('cancelEdit').textContent=t.btnCancel;
+ document.getElementById('saveEdit').textContent=t.btnSave;
+ document.getElementById('settingsTitle').textContent=t.settingsTitle;
+ document.getElementById('langLabel').textContent=t.langLabel;
+ document.getElementById('langSelect').value=currentLang;
+}
+
+// navigation
+document.getElementById('settingsBtn').onclick=()=>{
+ document.getElementById('mainPage').classList.remove('active');
+ document.getElementById('settingsPage').classList.add('active');
+};
+
+document.getElementById('backBtn').onclick=()=>{
+ document.getElementById('settingsPage').classList.remove('active');
+ document.getElementById('mainPage').classList.add('active');
+};
+
+document.getElementById('langSelect').onchange=(e)=>{
+ currentLang=e.target.value;
+ localStorage.setItem('lang',currentLang);
+ applyTranslations();
+};
+
+applyTranslations();
 render();
 </script>
 </body>
