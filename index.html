@@ -545,7 +545,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.2.0</div>
+<div class="version">v1.2.1</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -1159,12 +1159,10 @@ function showMonthChart(){
  newContainer.addEventListener('click',(e)=>{
   const bar=e.target.closest('.bar');
   if(bar && bar.dataset.date){
-   console.log('Bar clicked, date:', bar.dataset.date);
    newContainer.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
    const date=bar.dataset.date;
    selectedPeriod=date;
-   console.log('Calling showExpensesForDate with:', date);
    showExpensesForDate(date);
   }
  });
@@ -1287,11 +1285,8 @@ function formatDateDisplay(dateStr){
 }
 
 function showExpensesForDate(date){
- console.log('showExpensesForDate called with date:', date);
  const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
- console.log('Found records:', dayRecords.length, 'for date:', date);
  const container=document.getElementById('expenseList');
- console.log('expenseList container found:', !!container);
 
  if(dayRecords.length===0){
   container.innerHTML='<h4>No expenses on this day</h4>';
