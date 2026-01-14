@@ -94,6 +94,33 @@ button.primary.recording{
   color:var(--muted);
   margin:10px 0;
 }
+.viewToggle{
+  display:flex;
+  gap:0;
+  margin:20px 0;
+  background:rgba(255,255,255,0.05);
+  border-radius:12px;
+  padding:4px;
+}
+.viewToggleBtn{
+  flex:1;
+  padding:10px 16px;
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:500;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.viewToggleBtn.active{
+  background:var(--accent);
+  color:var(--bg);
+}
+.viewToggleBtn:hover:not(.active){
+  color:var(--text);
+}
 
 /* records */
 .record{
@@ -599,7 +626,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v2.1.0</div>
+<div class="version">v2.2.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -629,6 +656,11 @@ button.primary.recording{
 
     <button id="recBtn" class="primary">🎤 Start recording</button>
     <div class="status" id="status"></div>
+
+    <div class="viewToggle">
+      <button class="viewToggleBtn active" data-view="expenses">Expenses</button>
+      <button class="viewToggleBtn" data-view="percentages">Percentages</button>
+    </div>
 
     <div id="list"></div>
   </div>
@@ -724,6 +756,7 @@ button.primary.recording{
 <script>
 const KEY='vc-data';
 let records=JSON.parse(localStorage.getItem(KEY)||'[]');
+let currentDailyView='expenses';
 
 // Currency data
 const CURRENCIES=[
@@ -933,31 +966,89 @@ function render(){
  const list=document.getElementById('list');
  const todayStr=today();
  list.innerHTML='';
- records.forEach(r=>{
-  const recDate=r.date.slice(0,10);
-  if(recDate===todayStr){
-   t+=r.amount;
-   const row=document.createElement('div');
-   row.className='record';
-   row.innerHTML=`
-    <div class="icon">${ICONS[r.category]||'❓'}</div>
-    <div class="recMain">
-      <div class="recTitle">${r.item}</div>
-      <div class="recMeta">${r.category}</div>
-    </div>
-    <div class="recRight">
-      <div class="amount">${formatAmount(r.amount)}</div>
-      <button class="menuBtn" data-id="${r.id}">⋮</button>
-    </div>`;
-   list.appendChild(row);
-   row.querySelector('.menuBtn').onclick=()=>openActionMenu(r.id);
-  }
-  if(recDate.slice(0,7)===todayStr.slice(0,7)) m+=r.amount;
-  if(recDate.slice(0,4)===todayStr.slice(0,4)) y+=r.amount;
- });
+
+ // Check current view mode
+ if(currentDailyView==='percentages'){
+  renderDailyPercentages();
+  // Still calculate totals
+  records.forEach(r=>{
+   const recDate=r.date.slice(0,10);
+   if(recDate===todayStr) t+=r.amount;
+   if(recDate.slice(0,7)===todayStr.slice(0,7)) m+=r.amount;
+   if(recDate.slice(0,4)===todayStr.slice(0,4)) y+=r.amount;
+  });
+ } else {
+  // Expenses view (default)
+  records.forEach(r=>{
+   const recDate=r.date.slice(0,10);
+   if(recDate===todayStr){
+    t+=r.amount;
+    const row=document.createElement('div');
+    row.className='record';
+    row.innerHTML=`
+     <div class="icon">${ICONS[r.category]||'❓'}</div>
+     <div class="recMain">
+       <div class="recTitle">${r.item}</div>
+       <div class="recMeta">${r.category}</div>
+     </div>
+     <div class="recRight">
+       <div class="amount">${formatAmount(r.amount)}</div>
+       <button class="menuBtn" data-id="${r.id}">⋮</button>
+     </div>`;
+    list.appendChild(row);
+    row.querySelector('.menuBtn').onclick=()=>openActionMenu(r.id);
+   }
+   if(recDate.slice(0,7)===todayStr.slice(0,7)) m+=r.amount;
+   if(recDate.slice(0,4)===todayStr.slice(0,4)) y+=r.amount;
+  });
+ }
+
  document.getElementById('sumToday').textContent=formatAmount(t);
  document.getElementById('sumMonth').textContent=formatAmount(m);
  document.getElementById('sumYear').textContent=formatAmount(y);
+}
+
+function renderDailyPercentages(){
+ const list=document.getElementById('list');
+ const todayStr=today();
+ const categoryTotals={};
+ let dayTotal=0;
+
+ // Calculate category totals for today
+ records.forEach(r=>{
+  const recDate=r.date.slice(0,10);
+  if(recDate===todayStr){
+   const category=r.category||CATEGORIES.uncategorized.name;
+   categoryTotals[category]=(categoryTotals[category]||0)+r.amount;
+   dayTotal+=r.amount;
+  }
+ });
+
+ // Build percentage chart
+ if(dayTotal>0){
+  const categoryArray=Object.entries(categoryTotals).map(([name,amount])=>{
+   const cat=Object.values(CATEGORIES).find(c=>c.name===name)||CATEGORIES.uncategorized;
+   return {name,amount,cat};
+  }).sort((a,b)=>b.amount-a.amount);
+
+  categoryArray.forEach(({name,amount,cat})=>{
+   const percentage=((amount/dayTotal)*100).toFixed(1);
+   const bar=document.createElement('div');
+   bar.className='categoryBar';
+   bar.innerHTML=`
+    <div class="categoryBarLabel">
+     <span>${cat.emoji} ${name}</span>
+     <span>${formatAmount(amount)} (${percentage}%)</span>
+    </div>
+    <div class="categoryBarTrack">
+     <div class="categoryBarFill" style="width:${percentage}%;background:${cat.color}"></div>
+    </div>`;
+   list.appendChild(bar);
+  });
+ } else {
+  // No expenses today
+  list.innerHTML='<p style="text-align:center;color:var(--muted);padding:40px 20px;">No expenses recorded for today</p>';
+ }
 }
 
 let rec,isRec=false;
@@ -1756,6 +1847,16 @@ document.getElementById('todayBtn').onclick=()=>{
 };
 document.getElementById('monthBtn').onclick=()=>openChart('month');
 document.getElementById('yearBtn').onclick=()=>openChart('year');
+
+// Daily view toggle buttons
+document.querySelectorAll('.viewToggleBtn').forEach(btn=>{
+ btn.addEventListener('click',()=>{
+  document.querySelectorAll('.viewToggleBtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDailyView=btn.getAttribute('data-view');
+  render();
+ });
+});
 
 // currency selector
 const currencySelector=document.getElementById('currencySelector');
