@@ -393,12 +393,22 @@ button.primary.recording{
 .settingItem select{
   width:100%;
   padding:12px;
+  padding-right:40px;
   background:var(--bg);
   border:1px solid rgba(255,255,255,0.1);
   border-radius:10px;
   color:var(--text);
   font-size:15px;
   cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path fill="%239a9ab3" d="M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z"/></svg>');
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+}
+.settingItem select:hover{
+  border-color:var(--accent);
 }
 .settingItem select option{
   background:var(--bg);
@@ -509,6 +519,15 @@ button.primary.recording{
 }
 .settingItem button:hover{
   border-color:var(--accent);
+}
+.settingItem button span:last-child{
+  color:var(--muted);
+  font-size:12px;
+  width:12px;
+  height:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 </style>
 </head>
@@ -1116,11 +1135,12 @@ function showMonthChart(){
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
- document.getElementById('chartContainer').innerHTML=chartHTML;
+ const container=document.getElementById('chartContainer');
+ container.innerHTML=chartHTML;
 
- document.querySelectorAll('.bar').forEach(bar=>{
+ container.querySelectorAll('.bar').forEach(bar=>{
   bar.onclick=()=>{
-   document.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+   container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
    const date=bar.dataset.date;
    selectedPeriod=date;
@@ -1207,11 +1227,12 @@ function showYearChart(){
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
- document.getElementById('chartContainer').innerHTML=chartHTML;
+ const container=document.getElementById('chartContainer');
+ container.innerHTML=chartHTML;
 
- document.querySelectorAll('.bar').forEach(bar=>{
+ container.querySelectorAll('.bar').forEach(bar=>{
   bar.onclick=()=>{
-   document.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+   container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
    const monthPrefix=bar.dataset.month;
    selectedPeriod=monthPrefix;
