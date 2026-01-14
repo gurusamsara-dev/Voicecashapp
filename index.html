@@ -1152,7 +1152,7 @@ function showMonthChart(){
  showExpensesForDate(autoSelectedDate);
 
  setTimeout(()=>{
-  const selectedBar=document.querySelector('.bar.selected');
+  const selectedBar=container.querySelector('.bar.selected');
   if(selectedBar){
    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   }
@@ -1244,7 +1244,7 @@ function showYearChart(){
  showMonthSummary(autoSelectedMonth);
 
  setTimeout(()=>{
-  const selectedBar=document.querySelector('.bar.selected');
+  const selectedBar=container.querySelector('.bar.selected');
   if(selectedBar){
    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   }
@@ -1287,7 +1287,7 @@ function showExpensesForDate(date){
 
  container.innerHTML=html;
 
- document.querySelectorAll('#expenseList .menuBtn').forEach(btn=>{
+ container.querySelectorAll('.menuBtn').forEach(btn=>{
   btn.onclick=()=>{
    currentRecordId=btn.dataset.id;
    actionOverlay.classList.add('show');
@@ -1366,7 +1366,7 @@ function showExpensesForMonth(monthPrefix){
 
  container.innerHTML=html;
 
- document.querySelectorAll('#expenseList .menuBtn').forEach(btn=>{
+ container.querySelectorAll('.menuBtn').forEach(btn=>{
   btn.onclick=()=>{
    currentRecordId=btn.dataset.id;
    actionOverlay.classList.add('show');
