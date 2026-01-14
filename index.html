@@ -545,7 +545,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.2.2</div>
+<div class="version">v1.2.3-debug</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -1161,6 +1161,8 @@ function showMonthChart(){
   if(bar && bar.dataset.date){
    e.preventDefault();
    e.stopPropagation();
+   console.log('Bar clicked, date from dataset:', bar.dataset.date);
+   console.log('Sample records dates:', records.slice(0,5).map(r=>({date:r.date,slice:r.date.slice(0,10)})));
    newContainer.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
    const date=bar.dataset.date;
@@ -1295,10 +1297,20 @@ function formatDateDisplay(dateStr){
 }
 
 function showExpensesForDate(date){
- const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
+ console.log('showExpensesForDate called with:', date);
+ console.log('Total records:', records.length);
+ console.log('Filtering records where date.slice(0,10) === ', date);
+ const dayRecords=records.filter(r=>{
+  const recordDate=r.date.slice(0,10);
+  const matches=recordDate===date;
+  if(matches) console.log('Match found:', r.date, 'amount:', r.amount);
+  return matches;
+ });
+ console.log('Found dayRecords:', dayRecords.length);
  const container=document.getElementById('expenseList');
 
  if(dayRecords.length===0){
+  console.log('No records found, showing empty message');
   container.innerHTML='<h4>No expenses on this day</h4>';
   return;
  }
