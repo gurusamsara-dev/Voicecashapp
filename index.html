@@ -608,8 +608,18 @@ btn.onclick=()=>{
 
   for(let i=0;i<words.length;i++){
    const word=words[i].replace(/[.,!?]/g,'');
+   let val=undefined;
+
+   // Check if it's a number word in dictionary
    if(dict[word]!==undefined){
-    const val=dict[word];
+    val=dict[word];
+   }
+   // Also check if it's a digit string (like "5", "500", etc.)
+   else if(/^\d+$/.test(word)){
+    val=parseInt(word,10);
+   }
+
+   if(val!==undefined){
     if(firstNumberIndex===-1) firstNumberIndex=i;
     foundNumber=true;
 
