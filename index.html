@@ -343,6 +343,47 @@ button.primary.recording{
   min-width:200px;
   text-align:center;
 }
+.categoryChart{
+  padding:16px;
+  margin-bottom:16px;
+}
+.categoryBar{
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:opacity 0.2s;
+}
+.categoryBar:hover{
+  opacity:0.8;
+}
+.categoryBarLabel{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:6px;
+  font-size:13px;
+  color:var(--text);
+}
+.categoryBarLabel span:last-child{
+  font-weight:600;
+  color:var(--accent);
+}
+.categoryBarTrack{
+  height:24px;
+  background:rgba(255,255,255,0.05);
+  border-radius:12px;
+  overflow:hidden;
+}
+.categoryBarFill{
+  height:100%;
+  border-radius:12px;
+  transition:width 0.3s ease;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  padding-right:8px;
+  font-size:11px;
+  font-weight:600;
+  color:rgba(0,0,0,0.7);
+}
 .expenseList{
   margin-top:20px;
 }
@@ -558,7 +599,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v2.0.0</div>
+<div class="version">v2.1.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -756,6 +797,7 @@ const CATEGORIES={
     id:'food',
     name:'Food & Drinks',
     emoji:'🍔',
+    color:'#FF6B6B',
     keywords:['кофе','латте','капучино','еда','пицца','шаурма','ресторан','бургер','макдональдс','кфс','старбакс','кафе','обед','ужин','завтрак','перекус','продукты','grocery','coffee','food','pizza','burger','restaurant','lunch','dinner','breakfast'],
     aliases:['starbucks','mcdonalds','kfc','dunkin','subway','burger king']
   },
@@ -763,6 +805,7 @@ const CATEGORIES={
     id:'transport',
     name:'Transport',
     emoji:'🚕',
+    color:'#4ECDC4',
     keywords:['такси','метро','автобус','трамвай','маршрутка','яндекс','убер','taxi','uber','yandex','bus','metro','transport','поездка','билет','проезд'],
     aliases:['uber','yandex taxi','bolt','gett']
   },
@@ -770,6 +813,7 @@ const CATEGORIES={
     id:'home',
     name:'Home & Utilities',
     emoji:'🏠',
+    color:'#95E1D3',
     keywords:['квартира','дом','аренда','коммунальные','электричество','газ','вода','интернет','телефон','связь','rent','utilities','electricity','water','internet','phone','home'],
     aliases:[]
   },
@@ -777,6 +821,7 @@ const CATEGORIES={
     id:'health',
     name:'Health & Fitness',
     emoji:'💊',
+    color:'#F38181',
     keywords:['аптека','лекарство','врач','больница','витамины','спортзал','фитнес','doctor','pharmacy','medicine','hospital','gym','fitness','health'],
     aliases:[]
   },
@@ -784,6 +829,7 @@ const CATEGORIES={
     id:'entertainment',
     name:'Entertainment',
     emoji:'🎬',
+    color:'#AA96DA',
     keywords:['кино','театр','концерт','развлечения','игры','подписка','netflix','spotify','cinema','movie','theater','concert','entertainment','subscription','games'],
     aliases:['netflix','spotify','youtube','steam','playstation']
   },
@@ -791,6 +837,7 @@ const CATEGORIES={
     id:'shopping',
     name:'Shopping',
     emoji:'🛍️',
+    color:'#FCBAD3',
     keywords:['одежда','обувь','магазин','покупки','шоппинг','clothes','shoes','shopping','store','mall','clothing'],
     aliases:['zara','h&m','ikea','ozon','wildberries']
   },
@@ -798,6 +845,7 @@ const CATEGORIES={
     id:'travel',
     name:'Travel',
     emoji:'✈️',
+    color:'#A8D8EA',
     keywords:['отель','гостиница','авиабилет','поезд','самолет','путешествие','отпуск','hotel','flight','train','plane','travel','vacation','ticket'],
     aliases:['booking','airbnb','aviasales']
   },
@@ -805,6 +853,7 @@ const CATEGORIES={
     id:'finance',
     name:'Finance & Fees',
     emoji:'💳',
+    color:'#FFD93D',
     keywords:['банк','комиссия','перевод','налог','штраф','страховка','bank','fee','transfer','tax','fine','insurance','commission'],
     aliases:[]
   },
@@ -812,6 +861,7 @@ const CATEGORIES={
     id:'education',
     name:'Education',
     emoji:'📚',
+    color:'#6BCB77',
     keywords:['курсы','обучение','книги','образование','школа','университет','course','education','books','school','university','learning'],
     aliases:['udemy','coursera','skillbox']
   },
@@ -819,6 +869,7 @@ const CATEGORIES={
     id:'uncategorized',
     name:'Uncategorized',
     emoji:'⚪',
+    color:'#9a9ab3',
     keywords:[],
     aliases:[]
   }
@@ -1273,6 +1324,10 @@ function showMonthChart(){
   dailyTotals[date]=0;
  }
 
+ // Build category totals
+ const categoryTotals={};
+ let monthTotal=0;
+
  records.forEach(r=>{
   const recDate=r.date.slice(0,10);
   if(recDate.startsWith(`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}`)){
@@ -1280,6 +1335,11 @@ function showMonthChart(){
    if(!daysWithExpenses.includes(recDate)){
     daysWithExpenses.push(recDate);
    }
+
+   // Track category totals
+   const category=r.category||CATEGORIES.uncategorized.name;
+   categoryTotals[category]=(categoryTotals[category]||0)+r.amount;
+   monthTotal+=r.amount;
   }
  });
 
@@ -1314,7 +1374,36 @@ function showMonthChart(){
   const isSelected=date===autoSelectedDate?'selected':'';
   chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-date="${date}"><div class="barLabel">${d}</div></div>`;
  }
- chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
+ chartHTML+='</div></div>';
+
+ // Add category percentage chart
+ if(monthTotal>0){
+  chartHTML+=`<div class="categoryChart"><h4 style="margin:16px 0 12px;font-size:14px;color:var(--muted);">Category Breakdown</h4>`;
+
+  // Sort categories by amount (highest first)
+  const categoryArray=Object.entries(categoryTotals).map(([name,amount])=>{
+   const cat=Object.values(CATEGORIES).find(c=>c.name===name)||CATEGORIES.uncategorized;
+   return {name,amount,cat};
+  }).sort((a,b)=>b.amount-a.amount);
+
+  categoryArray.forEach(({name,amount,cat})=>{
+   const percentage=((amount/monthTotal)*100).toFixed(1);
+   chartHTML+=`
+    <div class="categoryBar" data-category="${name}">
+     <div class="categoryBarLabel">
+      <span>${cat.emoji} ${name}</span>
+      <span>${percentage}%</span>
+     </div>
+     <div class="categoryBarTrack">
+      <div class="categoryBarFill" style="width:${percentage}%;background:${cat.color}"></div>
+     </div>
+    </div>`;
+  });
+
+  chartHTML+='</div>';
+ }
+
+ chartHTML+='<div id="expenseList" class="expenseList"></div>';
 
  // Insert HTML
  const container=document.getElementById('chartContainer');
@@ -1335,6 +1424,22 @@ function showMonthChart(){
   bar.addEventListener('touchend',(e)=>{
    e.preventDefault();
    selectBar();
+  });
+ });
+
+ // Attach event handlers to category bars
+ const categoryBars=container.querySelectorAll('.categoryBar');
+ categoryBars.forEach(catBar=>{
+  const selectCategoryBar=()=>{
+   const categoryName=catBar.getAttribute('data-category');
+   selectedPeriod=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}`;
+   showCategoryExpenses(categoryName,selectedPeriod);
+  };
+
+  catBar.addEventListener('click',selectCategoryBar);
+  catBar.addEventListener('touchend',(e)=>{
+   e.preventDefault();
+   selectCategoryBar();
   });
  });
 
@@ -1486,6 +1591,72 @@ function showExpensesForDate(date){
      <button class="menuBtn" data-id="${r.id}">⋮</button>
     </div>
    </div>`;
+ });
+
+ container.innerHTML=html;
+
+ container.querySelectorAll('.menuBtn').forEach(btn=>{
+  btn.onclick=()=>{
+   currentRecordId=btn.dataset.id;
+   actionOverlay.classList.add('show');
+  };
+ });
+}
+
+function showCategoryExpenses(categoryName,monthPrefix){
+ // Filter records by category and month
+ const categoryRecords=records.filter(r=>{
+  const recDate=r.date.slice(0,10);
+  const recCategory=r.category||CATEGORIES.uncategorized.name;
+  return recDate.startsWith(monthPrefix) && recCategory===categoryName;
+ });
+
+ const container=document.getElementById('expenseList');
+
+ if(categoryRecords.length===0){
+  container.innerHTML=`<h4>${categoryName}</h4><p style="color:var(--muted);margin-top:8px;">No expenses in this category</p>`;
+  return;
+ }
+
+ // Group by date
+ const byDate={};
+ categoryRecords.forEach(r=>{
+  const date=r.date.slice(0,10);
+  if(!byDate[date]) byDate[date]=[];
+  byDate[date].push(r);
+ });
+
+ const cat=Object.values(CATEGORIES).find(c=>c.name===categoryName)||CATEGORIES.uncategorized;
+ let html=`<h4>${cat.emoji} ${categoryName}</h4>`;
+
+ // Sort dates chronologically
+ Object.keys(byDate).sort().forEach(date=>{
+  const dateDisplay=formatDateDisplay(date);
+  const dayRecords=byDate[date];
+  const dayTotal=dayRecords.reduce((sum,r)=>sum+r.amount,0);
+
+  html+=`<div style="margin-top:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">
+   <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+    <span style="font-size:13px;color:var(--muted);">${dateDisplay}</span>
+    <span style="font-size:13px;font-weight:600;color:var(--accent);">${formatAmount(dayTotal)}</span>
+   </div>`;
+
+  dayRecords.forEach(r=>{
+   html+=`
+    <div class="record">
+     <div class="icon">${cat.emoji}</div>
+     <div class="recMain">
+      <div class="recTitle">${r.item}</div>
+      <div class="recMeta">${new Date(r.date).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
+     </div>
+     <div class="recRight">
+      <div class="amount">${formatAmount(r.amount)}</div>
+      <button class="menuBtn" data-id="${r.id}">⋮</button>
+     </div>
+    </div>`;
+  });
+
+  html+='</div>';
  });
 
  container.innerHTML=html;
