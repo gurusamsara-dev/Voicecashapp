@@ -1140,7 +1140,7 @@ function showMonthChart(){
 
  const chartScroll=container.querySelector('.chartScroll');
  if(chartScroll){
-  chartScroll.onclick=(e)=>{
+  chartScroll.addEventListener('click',(e)=>{
    const bar=e.target.closest('.bar');
    if(bar && bar.dataset.date){
     container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
@@ -1149,7 +1149,7 @@ function showMonthChart(){
     selectedPeriod=date;
     showExpensesForDate(date);
    }
-  };
+  });
  }
 
  selectedPeriod=autoSelectedDate;
@@ -1236,7 +1236,7 @@ function showYearChart(){
 
  const chartScroll=container.querySelector('.chartScroll');
  if(chartScroll){
-  chartScroll.onclick=(e)=>{
+  chartScroll.addEventListener('click',(e)=>{
    const bar=e.target.closest('.bar');
    if(bar && bar.dataset.month){
     container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
@@ -1245,7 +1245,7 @@ function showYearChart(){
     selectedPeriod=monthPrefix;
     showMonthSummary(monthPrefix);
    }
-  };
+  });
  }
 
  selectedPeriod=autoSelectedMonth;
