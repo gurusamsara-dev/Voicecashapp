@@ -1135,11 +1135,12 @@ function showMonthChart(){
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
- document.getElementById('chartContainer').innerHTML=chartHTML;
+ const container=document.getElementById('chartContainer');
+ container.innerHTML=chartHTML;
 
- document.querySelectorAll('.bar').forEach(bar=>{
+ container.querySelectorAll('.bar').forEach(bar=>{
   bar.onclick=()=>{
-   document.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+   container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
    const date=bar.dataset.date;
    selectedPeriod=date;
@@ -1226,11 +1227,12 @@ function showYearChart(){
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
- document.getElementById('chartContainer').innerHTML=chartHTML;
+ const container=document.getElementById('chartContainer');
+ container.innerHTML=chartHTML;
 
- document.querySelectorAll('.bar').forEach(bar=>{
+ container.querySelectorAll('.bar').forEach(bar=>{
   bar.onclick=()=>{
-   document.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+   container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
    const monthPrefix=bar.dataset.month;
    selectedPeriod=monthPrefix;
