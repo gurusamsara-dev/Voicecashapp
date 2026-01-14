@@ -297,6 +297,7 @@ button.primary.recording{
   color:var(--muted);
   white-space:nowrap;
   font-weight:500;
+  pointer-events:none;
 }
 .monthHeader{
   display:flex;
@@ -1136,27 +1137,29 @@ function showMonthChart(){
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
  const container=document.getElementById('chartContainer');
- container.innerHTML=chartHTML;
 
- const chartScroll=container.querySelector('.chartScroll');
- if(chartScroll){
-  chartScroll.addEventListener('click',(e)=>{
-   const bar=e.target.closest('.bar');
-   if(bar && bar.dataset.date){
-    container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
-    bar.classList.add('selected');
-    const date=bar.dataset.date;
-    selectedPeriod=date;
-    showExpensesForDate(date);
-   }
-  });
- }
+ // Remove old event listeners by cloning
+ const newContainer=container.cloneNode(false);
+ newContainer.innerHTML=chartHTML;
+ container.parentNode.replaceChild(newContainer,container);
+
+ // Attach click handler directly to container with event delegation
+ newContainer.addEventListener('click',(e)=>{
+  const bar=e.target.closest('.bar');
+  if(bar && bar.dataset.date){
+   newContainer.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+   bar.classList.add('selected');
+   const date=bar.dataset.date;
+   selectedPeriod=date;
+   showExpensesForDate(date);
+  }
+ });
 
  selectedPeriod=autoSelectedDate;
  showExpensesForDate(autoSelectedDate);
 
  setTimeout(()=>{
-  const selectedBar=container.querySelector('.bar.selected');
+  const selectedBar=newContainer.querySelector('.bar.selected');
   if(selectedBar){
    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   }
@@ -1232,27 +1235,29 @@ function showYearChart(){
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
  const container=document.getElementById('chartContainer');
- container.innerHTML=chartHTML;
 
- const chartScroll=container.querySelector('.chartScroll');
- if(chartScroll){
-  chartScroll.addEventListener('click',(e)=>{
-   const bar=e.target.closest('.bar');
-   if(bar && bar.dataset.month){
-    container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
-    bar.classList.add('selected');
-    const monthPrefix=bar.dataset.month;
-    selectedPeriod=monthPrefix;
-    showMonthSummary(monthPrefix);
-   }
-  });
- }
+ // Remove old event listeners by cloning
+ const newContainer=container.cloneNode(false);
+ newContainer.innerHTML=chartHTML;
+ container.parentNode.replaceChild(newContainer,container);
+
+ // Attach click handler directly to container with event delegation
+ newContainer.addEventListener('click',(e)=>{
+  const bar=e.target.closest('.bar');
+  if(bar && bar.dataset.month){
+   newContainer.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+   bar.classList.add('selected');
+   const monthPrefix=bar.dataset.month;
+   selectedPeriod=monthPrefix;
+   showMonthSummary(monthPrefix);
+  }
+ });
 
  selectedPeriod=autoSelectedMonth;
  showMonthSummary(autoSelectedMonth);
 
  setTimeout(()=>{
-  const selectedBar=container.querySelector('.bar.selected');
+  const selectedBar=newContainer.querySelector('.bar.selected');
   if(selectedBar){
    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   }
