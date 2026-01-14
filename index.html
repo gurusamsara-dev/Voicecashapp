@@ -398,10 +398,12 @@ button.primary.recording{
   max-height:70vh;
   display:flex;
   flex-direction:column;
+  position:relative;
 }
 .currencyPanel h3{
   margin:0 0 16px;
   font-size:18px;
+  flex-shrink:0;
 }
 .currencySearch{
   width:100%;
@@ -412,6 +414,10 @@ button.primary.recording{
   color:var(--text);
   font-size:15px;
   margin-bottom:12px;
+  flex-shrink:0;
+  position:sticky;
+  top:0;
+  z-index:10;
 }
 .currencySearch:focus{
   outline:none;
@@ -420,6 +426,7 @@ button.primary.recording{
 .currencyList{
   overflow-y:auto;
   flex:1;
+  min-height:0;
 }
 .currencyItem{
   padding:14px;
