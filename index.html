@@ -545,7 +545,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.4.0</div>
+<div class="version">v1.4.1-debug</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -982,12 +982,20 @@ function closeEditPanel(){
 }
 
 function saveEdit(){
+ console.log('=== SAVE EDIT START ===');
+ console.log('currentRecordId:', currentRecordId);
+
  // Find the record
  const record=records.find(r=>r.id===currentRecordId);
+ console.log('Record found:', !!record);
  if(!record){
+  console.log('ERROR: Record not found, closing panel');
+  alert('Error: Record not found');
   closeEditPanel();
   return;
  }
+
+ console.log('Original record:', JSON.stringify(record));
 
  // Get form values
  const itemInput=document.getElementById('editItem');
@@ -1000,11 +1008,23 @@ function saveEdit(){
  const amountVal=parseFloat(amountInput.value);
  const dateVal=dateInput.value;
 
+ console.log('Form values:', {itemVal, catVal, amountVal, dateVal});
+
  // Validate
  if(!itemVal || !catVal || !amountVal || amountVal<=0 || !dateVal){
+  console.log('VALIDATION FAILED');
+  console.log('Validation checks:', {
+   itemVal: !!itemVal,
+   catVal: !!catVal,
+   amountVal: !!amountVal,
+   amountPositive: amountVal>0,
+   dateVal: !!dateVal
+  });
   alert('Please fill all fields with valid values');
   return;
  }
+
+ console.log('Validation passed');
 
  // Update record
  record.item=itemVal;
@@ -1019,19 +1039,26 @@ function saveEdit(){
   record.date=dateVal;
  }
 
+ console.log('Updated record:', JSON.stringify(record));
+
  // Save to localStorage
  localStorage.setItem(KEY,JSON.stringify(records));
+ console.log('Saved to localStorage');
 
  // Close panel
  closeEditPanel();
+ console.log('Panel closed');
 
  // Refresh view
  if(currentChartType && selectedPeriod){
+  console.log('Refreshing chart view:', currentChartType);
   if(currentChartType==='month') showMonthChart();
   else if(currentChartType==='year') showYearChart();
  }else{
+  console.log('Refreshing main view');
   render();
  }
+ console.log('=== SAVE EDIT END ===');
 }
 
 // event listeners
