@@ -545,7 +545,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.2.3-debug</div>
+<div class="version">v1.3.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -1098,6 +1098,7 @@ function showMonthChart(){
 
  const monthYearText=`${getMonthName(displayedMonth)} ${displayedYear}`;
 
+ // Build daily totals
  const dailyTotals={};
  const daysWithExpenses=[];
 
@@ -1131,6 +1132,7 @@ function showMonthChart(){
   autoSelectedDate=lastDay;
  }
 
+ // Build HTML
  let chartHTML=`
   <div class="monthHeader">
    <button class="monthNav" onclick="prevMonth()">←</button>
@@ -1148,37 +1150,35 @@ function showMonthChart(){
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
 
+ // Insert HTML
  const container=document.getElementById('chartContainer');
+ container.innerHTML=chartHTML;
 
- // Remove old event listeners by cloning
- const newContainer=container.cloneNode(false);
- newContainer.innerHTML=chartHTML;
- container.parentNode.replaceChild(newContainer,container);
-
- // Attach click handler directly to container with event delegation
- const handleBarSelect=(e)=>{
-  const bar=e.target.closest('.bar');
-  if(bar && bar.dataset.date){
-   e.preventDefault();
-   e.stopPropagation();
-   console.log('Bar clicked, date from dataset:', bar.dataset.date);
-   console.log('Sample records dates:', records.slice(0,5).map(r=>({date:r.date,slice:r.date.slice(0,10)})));
-   newContainer.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+ // Attach event handlers to each bar individually
+ const bars=container.querySelectorAll('.bar');
+ bars.forEach(bar=>{
+  const selectBar=()=>{
+   bars.forEach(b=>b.classList.remove('selected'));
    bar.classList.add('selected');
-   const date=bar.dataset.date;
+   const date=bar.getAttribute('data-date');
    selectedPeriod=date;
    showExpensesForDate(date);
-  }
- };
+  };
 
- newContainer.addEventListener('click',handleBarSelect);
- newContainer.addEventListener('touchend',handleBarSelect);
+  bar.addEventListener('click',selectBar);
+  bar.addEventListener('touchend',(e)=>{
+   e.preventDefault();
+   selectBar();
+  });
+ });
 
+ // Show initial data
  selectedPeriod=autoSelectedDate;
  showExpensesForDate(autoSelectedDate);
 
+ // Scroll to selected bar
  setTimeout(()=>{
-  const selectedBar=newContainer.querySelector('.bar.selected');
+  const selectedBar=container.querySelector('.bar.selected');
   if(selectedBar){
    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   }
@@ -1297,20 +1297,10 @@ function formatDateDisplay(dateStr){
 }
 
 function showExpensesForDate(date){
- console.log('showExpensesForDate called with:', date);
- console.log('Total records:', records.length);
- console.log('Filtering records where date.slice(0,10) === ', date);
- const dayRecords=records.filter(r=>{
-  const recordDate=r.date.slice(0,10);
-  const matches=recordDate===date;
-  if(matches) console.log('Match found:', r.date, 'amount:', r.amount);
-  return matches;
- });
- console.log('Found dayRecords:', dayRecords.length);
+ const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
  const container=document.getElementById('expenseList');
 
  if(dayRecords.length===0){
-  console.log('No records found, showing empty message');
   container.innerHTML='<h4>No expenses on this day</h4>';
   return;
  }
