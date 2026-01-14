@@ -217,7 +217,7 @@ button.primary.recording{
   font-size:13px;
   margin-bottom:6px;
 }
-.formGroup input{
+.formGroup input,.formGroup select{
   width:100%;
   padding:12px;
   background:var(--bg);
@@ -225,6 +225,16 @@ button.primary.recording{
   border-radius:10px;
   color:var(--text);
   font-size:15px;
+  cursor:pointer;
+}
+.formGroup select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path fill="%239a9ab3" d="M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z"/></svg>');
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  padding-right:40px;
 }
 .formActions{
   display:flex;
@@ -548,7 +558,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.5.2</div>
+<div class="version">v2.0.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -635,7 +645,7 @@ button.primary.recording{
     </div>
     <div class="formGroup">
       <label id="labelEditCategory">Category</label>
-      <input type="text" id="editCategory">
+      <select id="editCategory"></select>
     </div>
     <div class="formGroup">
       <label id="labelEditAmount">Amount</label>
@@ -740,26 +750,114 @@ function getCurrencyDisplay(){
   return curr?`${curr.code} – ${curr.name}`:'USD – US Dollar';
 }
 
-const ICONS={
-  'Кофе':'🍗',
-  'Еда':'🍗',
-  'Транспорт':'🚕',
-  'Связь':'📶',
-  'Неопределено':'❓'
+// Category system - structured like file-based data
+const CATEGORIES={
+  food:{
+    id:'food',
+    name:'Food & Drinks',
+    emoji:'🍔',
+    keywords:['кофе','латте','капучино','еда','пицца','шаурма','ресторан','бургер','макдональдс','кфс','старбакс','кафе','обед','ужин','завтрак','перекус','продукты','grocery','coffee','food','pizza','burger','restaurant','lunch','dinner','breakfast'],
+    aliases:['starbucks','mcdonalds','kfc','dunkin','subway','burger king']
+  },
+  transport:{
+    id:'transport',
+    name:'Transport',
+    emoji:'🚕',
+    keywords:['такси','метро','автобус','трамвай','маршрутка','яндекс','убер','taxi','uber','yandex','bus','metro','transport','поездка','билет','проезд'],
+    aliases:['uber','yandex taxi','bolt','gett']
+  },
+  home:{
+    id:'home',
+    name:'Home & Utilities',
+    emoji:'🏠',
+    keywords:['квартира','дом','аренда','коммунальные','электричество','газ','вода','интернет','телефон','связь','rent','utilities','electricity','water','internet','phone','home'],
+    aliases:[]
+  },
+  health:{
+    id:'health',
+    name:'Health & Fitness',
+    emoji:'💊',
+    keywords:['аптека','лекарство','врач','больница','витамины','спортзал','фитнес','doctor','pharmacy','medicine','hospital','gym','fitness','health'],
+    aliases:[]
+  },
+  entertainment:{
+    id:'entertainment',
+    name:'Entertainment',
+    emoji:'🎬',
+    keywords:['кино','театр','концерт','развлечения','игры','подписка','netflix','spotify','cinema','movie','theater','concert','entertainment','subscription','games'],
+    aliases:['netflix','spotify','youtube','steam','playstation']
+  },
+  shopping:{
+    id:'shopping',
+    name:'Shopping',
+    emoji:'🛍️',
+    keywords:['одежда','обувь','магазин','покупки','шоппинг','clothes','shoes','shopping','store','mall','clothing'],
+    aliases:['zara','h&m','ikea','ozon','wildberries']
+  },
+  travel:{
+    id:'travel',
+    name:'Travel',
+    emoji:'✈️',
+    keywords:['отель','гостиница','авиабилет','поезд','самолет','путешествие','отпуск','hotel','flight','train','plane','travel','vacation','ticket'],
+    aliases:['booking','airbnb','aviasales']
+  },
+  finance:{
+    id:'finance',
+    name:'Finance & Fees',
+    emoji:'💳',
+    keywords:['банк','комиссия','перевод','налог','штраф','страховка','bank','fee','transfer','tax','fine','insurance','commission'],
+    aliases:[]
+  },
+  education:{
+    id:'education',
+    name:'Education',
+    emoji:'📚',
+    keywords:['курсы','обучение','книги','образование','школа','университет','course','education','books','school','university','learning'],
+    aliases:['udemy','coursera','skillbox']
+  },
+  uncategorized:{
+    id:'uncategorized',
+    name:'Uncategorized',
+    emoji:'⚪',
+    keywords:[],
+    aliases:[]
+  }
 };
 
-const RULES=[
- {c:'Кофе',k:['кофе','латте','капучино']},
- {c:'Еда',k:['еда','пицца','шаурма','ресторан']},
- {c:'Транспорт',k:['такси','метро','автобус']}
-];
+// Build icon mapping from categories
+const ICONS={};
+Object.values(CATEGORIES).forEach(cat=>{
+  ICONS[cat.name]=cat.emoji;
+  // Support both English and localized names
+  ICONS[cat.id]=cat.emoji;
+});
 
+// Auto-detect category based on keywords
 function detectCat(text){
- text=text.toLowerCase();
- for(const r of RULES)
-  for(const k of r.k)
-   if(text.includes(k)) return r.c;
- return 'Неопределено';
+  if(!text) return CATEGORIES.uncategorized.name;
+
+  text=text.toLowerCase();
+
+  // Try to match keywords in each category
+  for(const cat of Object.values(CATEGORIES)){
+    if(cat.id==='uncategorized') continue;
+
+    // Check keywords
+    for(const keyword of cat.keywords){
+      if(text.includes(keyword.toLowerCase())){
+        return cat.name;
+      }
+    }
+
+    // Check aliases
+    for(const alias of cat.aliases){
+      if(text.includes(alias.toLowerCase())){
+        return cat.name;
+      }
+    }
+  }
+
+  return CATEGORIES.uncategorized.name;
 }
 
 function today(){
@@ -961,8 +1059,21 @@ function openEditPanel(){
 
  // Populate form fields
  document.getElementById('editItem').value=record.item;
- document.getElementById('editCategory').value=record.category;
  document.getElementById('editAmount').value=record.amount;
+
+ // Populate category dropdown with emoji + name
+ const categorySelect=document.getElementById('editCategory');
+ categorySelect.innerHTML='';
+
+ Object.values(CATEGORIES).forEach(cat=>{
+  const option=document.createElement('option');
+  option.value=cat.name;
+  option.textContent=`${cat.emoji} ${cat.name}`;
+  if(cat.name===record.category){
+   option.selected=true;
+  }
+  categorySelect.appendChild(option);
+ });
 
  // Handle date format for datetime-local input
  let dateValue=record.date;
