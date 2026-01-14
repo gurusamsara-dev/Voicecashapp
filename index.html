@@ -545,7 +545,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.3.1-debug</div>
+<div class="version">v1.4.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -950,48 +950,82 @@ function deleteRecord(){
 
 function openEditPanel(){
  const record=records.find(r=>r.id===currentRecordId);
- if(!record) return;
+ if(!record){
+  closeActionMenu();
+  return;
+ }
+
+ // Populate form fields
  document.getElementById('editItem').value=record.item;
  document.getElementById('editCategory').value=record.category;
  document.getElementById('editAmount').value=record.amount;
+
+ // Handle date format for datetime-local input
  let dateValue=record.date;
- if(dateValue && dateValue.length===10) dateValue+='T00:00';
+ if(dateValue){
+  if(dateValue.includes('T')){
+   // Already has time, use as is
+   dateValue=dateValue.slice(0,16); // Format: YYYY-MM-DDTHH:MM
+  }else{
+   // Just date, add default time
+   dateValue+='T12:00';
+  }
+ }
  document.getElementById('editDate').value=dateValue;
+
  closeActionMenu();
  editPanel.classList.add('show');
 }
 
 function closeEditPanel(){
  editPanel.classList.remove('show');
- currentRecordId=null;
 }
 
 function saveEdit(){
+ // Find the record
  const record=records.find(r=>r.id===currentRecordId);
- console.log('saveEdit called, currentRecordId:', currentRecordId);
- console.log('record found:', !!record);
- if(!record) return;
- const itemVal=document.getElementById('editItem').value.trim();
- const catVal=document.getElementById('editCategory').value.trim();
- const amountVal=document.getElementById('editAmount').value;
- const dateVal=document.getElementById('editDate').value;
- console.log('Values:', {itemVal, catVal, amountVal, dateVal});
- if(!itemVal || !catVal || !amountVal || !dateVal){
-  console.log('Validation failed:', {
-   itemVal: !itemVal,
-   catVal: !catVal,
-   amountVal: !amountVal,
-   dateVal: !dateVal
-  });
+ if(!record){
+  closeEditPanel();
   return;
  }
+
+ // Get form values
+ const itemInput=document.getElementById('editItem');
+ const categoryInput=document.getElementById('editCategory');
+ const amountInput=document.getElementById('editAmount');
+ const dateInput=document.getElementById('editDate');
+
+ const itemVal=itemInput.value.trim();
+ const catVal=categoryInput.value.trim();
+ const amountVal=parseFloat(amountInput.value);
+ const dateVal=dateInput.value;
+
+ // Validate
+ if(!itemVal || !catVal || !amountVal || amountVal<=0 || !dateVal){
+  alert('Please fill all fields with valid values');
+  return;
+ }
+
+ // Update record
  record.item=itemVal;
  record.category=catVal;
- record.amount=+amountVal;
- record.date=dateVal;
+ record.amount=amountVal;
+
+ // Convert datetime-local to ISO string
+ if(dateVal.includes('T')){
+  const dt=new Date(dateVal);
+  record.date=dt.toISOString();
+ }else{
+  record.date=dateVal;
+ }
+
+ // Save to localStorage
  localStorage.setItem(KEY,JSON.stringify(records));
- console.log('Record saved, closing panel');
+
+ // Close panel
  closeEditPanel();
+
+ // Refresh view
  if(currentChartType && selectedPeriod){
   if(currentChartType==='month') showMonthChart();
   else if(currentChartType==='year') showYearChart();
