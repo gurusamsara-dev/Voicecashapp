@@ -25,10 +25,70 @@ body{
   max-width:520px;
   margin:auto;
   padding:16px;
+  position:relative;
+  overflow:hidden;
 }
 h1{
   text-align:center;
   margin:10px 0 14px;
+  position:relative;
+  animation:neonGlow 3s ease-in-out infinite,neonFlicker 8s linear infinite;
+  will-change:text-shadow,filter;
+}
+
+body.paused h1{
+  animation:none;
+  text-shadow:0 0 10px rgba(124,92,255,0.5),0 0 20px rgba(124,92,255,0.3);
+}
+
+.app::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(124,92,255,0.6),transparent);
+  animation:shimmer 3s ease-in-out infinite;
+  will-change:transform;
+  opacity:0.5;
+}
+
+body.paused .app::before{
+  animation:none;
+}
+
+h1 .mic-icon{
+  display:inline-block;
+  animation:micPulse 2s ease-in-out infinite;
+  will-change:transform,filter;
+}
+
+body.paused h1 .mic-icon{
+  animation:none;
+  filter:drop-shadow(0 0 2px rgba(124,92,255,0.3));
+}
+
+#recBtn{
+  position:relative;
+  overflow:visible;
+}
+
+#recBtn::before{
+  content:'🎤';
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:18px;
+  pointer-events:none;
+  animation:micPulse 2s ease-in-out infinite;
+  will-change:transform,filter;
+}
+
+body.paused #recBtn::before{
+  animation:none;
+  filter:drop-shadow(0 0 2px rgba(124,92,255,0.3));
 }
 
 /* top buttons */
@@ -89,6 +149,43 @@ button.primary.recording{
   0%,100%{opacity:1}
   50%{opacity:0.6}
 }
+
+/* Neon animations */
+@keyframes neonGlow{
+  0%,100%{
+    text-shadow:0 0 10px rgba(124,92,255,0.5),0 0 20px rgba(124,92,255,0.3),0 0 30px rgba(124,92,255,0.2);
+    filter:brightness(1);
+  }
+  50%{
+    text-shadow:0 0 15px rgba(124,92,255,0.7),0 0 30px rgba(124,92,255,0.5),0 0 45px rgba(124,92,255,0.3);
+    filter:brightness(1.15);
+  }
+}
+
+@keyframes neonFlicker{
+  0%,100%{opacity:1}
+  92%{opacity:0.95}
+  94%{opacity:1}
+  96%{opacity:0.97}
+  98%{opacity:1}
+}
+
+@keyframes shimmer{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
+}
+
+@keyframes micPulse{
+  0%,100%{
+    transform:scale(1);
+    filter:drop-shadow(0 0 2px rgba(124,92,255,0.3));
+  }
+  50%{
+    transform:scale(1.05);
+    filter:drop-shadow(0 0 8px rgba(124,92,255,0.6));
+  }
+}
+
 .status{
   text-align:center;
   color:var(--muted);
@@ -626,12 +723,12 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v2.2.0</div>
+<div class="version">v2.3.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
   <div class="app">
-    <h1 id="appTitle">🎙 Voice Cash</h1>
+    <h1 id="appTitle"><span class="mic-icon">🎙</span> Voice Cash</h1>
 
     <div class="topbar">
       <button class="active" id="todayBtn">Траты за день</button>
@@ -2343,6 +2440,15 @@ document.getElementById('langSelect').onchange=(e)=>{
 
 applyTranslations();
 render();
+
+// Page Visibility API - pause animations when app is hidden
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){
+  document.body.classList.add('paused');
+ }else{
+  document.body.classList.remove('paused');
+ }
+});
 </script>
 </body>
 </html>
