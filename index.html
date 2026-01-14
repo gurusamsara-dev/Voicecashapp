@@ -1124,7 +1124,7 @@ function showMonthChart(){
    <div class="monthTitle">${monthYearText}</div>
    <button class="monthNav" onclick="nextMonth()">→</button>
   </div>
-  <div class="chartScroll"><div class="chart">`;
+  <div class="chartScroll" style="padding-bottom:30px;"><div class="chart">`;
 
  for(let d=1;d<=daysInMonth;d++){
   const date=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -1138,15 +1138,19 @@ function showMonthChart(){
  const container=document.getElementById('chartContainer');
  container.innerHTML=chartHTML;
 
- container.querySelectorAll('.bar').forEach(bar=>{
-  bar.onclick=()=>{
-   container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
-   bar.classList.add('selected');
-   const date=bar.dataset.date;
-   selectedPeriod=date;
-   showExpensesForDate(date);
+ const chartScroll=container.querySelector('.chartScroll');
+ if(chartScroll){
+  chartScroll.onclick=(e)=>{
+   const bar=e.target.closest('.bar');
+   if(bar && bar.dataset.date){
+    container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+    bar.classList.add('selected');
+    const date=bar.dataset.date;
+    selectedPeriod=date;
+    showExpensesForDate(date);
+   }
   };
- });
+ }
 
  selectedPeriod=autoSelectedDate;
  showExpensesForDate(autoSelectedDate);
@@ -1216,7 +1220,7 @@ function showYearChart(){
    <div class="monthTitle">${yearText}</div>
    <button class="monthNav" onclick="nextYear()">→</button>
   </div>
-  <div class="chartScroll"><div class="chart">`;
+  <div class="chartScroll" style="padding-bottom:30px;"><div class="chart">`;
 
  for(let m=0;m<12;m++){
   const prefix=`${displayedYear}-${String(m+1).padStart(2,'0')}`;
@@ -1230,15 +1234,19 @@ function showYearChart(){
  const container=document.getElementById('chartContainer');
  container.innerHTML=chartHTML;
 
- container.querySelectorAll('.bar').forEach(bar=>{
-  bar.onclick=()=>{
-   container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
-   bar.classList.add('selected');
-   const monthPrefix=bar.dataset.month;
-   selectedPeriod=monthPrefix;
-   showMonthSummary(monthPrefix);
+ const chartScroll=container.querySelector('.chartScroll');
+ if(chartScroll){
+  chartScroll.onclick=(e)=>{
+   const bar=e.target.closest('.bar');
+   if(bar && bar.dataset.month){
+    container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+    bar.classList.add('selected');
+    const monthPrefix=bar.dataset.month;
+    selectedPeriod=monthPrefix;
+    showMonthSummary(monthPrefix);
+   }
   };
- });
+ }
 
  selectedPeriod=autoSelectedMonth;
  showMonthSummary(autoSelectedMonth);
