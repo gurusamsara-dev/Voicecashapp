@@ -530,10 +530,22 @@ button.primary.recording{
   align-items:center;
   justify-content:center;
 }
+.version{
+  position:fixed;
+  top:8px;
+  left:8px;
+  font-size:10px;
+  color:var(--muted);
+  opacity:0.6;
+  z-index:1000;
+  font-weight:500;
+  user-select:none;
+}
 </style>
 </head>
 
 <body>
+<div class="version">v1.2.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
