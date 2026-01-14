@@ -372,6 +372,105 @@ button.primary.recording{
   background:var(--bg);
   color:var(--text);
 }
+
+/* currency selector */
+.currencySelector{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  z-index:300;
+}
+.currencySelector.show{
+  display:flex;
+}
+.currencyPanel{
+  background:var(--card);
+  border-radius:20px 20px 0 0;
+  padding:20px;
+  width:100%;
+  max-width:520px;
+  max-height:70vh;
+  display:flex;
+  flex-direction:column;
+}
+.currencyPanel h3{
+  margin:0 0 16px;
+  font-size:18px;
+}
+.currencySearch{
+  width:100%;
+  padding:12px;
+  background:var(--bg);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;
+  color:var(--text);
+  font-size:15px;
+  margin-bottom:12px;
+}
+.currencySearch:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.currencyList{
+  overflow-y:auto;
+  flex:1;
+}
+.currencyItem{
+  padding:14px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-size:15px;
+  text-align:left;
+  border-radius:10px;
+  margin:4px 0;
+  cursor:pointer;
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.currencyItem:hover{
+  background:rgba(255,255,255,0.05);
+}
+.currencyItem.selected{
+  background:var(--accent);
+  color:#fff;
+}
+.currencyCode{
+  font-weight:600;
+  min-width:50px;
+}
+.currencyName{
+  color:var(--muted);
+  font-size:13px;
+}
+.currencyItem.selected .currencyName{
+  color:rgba(255,255,255,0.8);
+}
+.settingItem button{
+  width:100%;
+  padding:12px;
+  background:var(--bg);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;
+  color:var(--text);
+  font-size:15px;
+  cursor:pointer;
+  text-align:left;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.settingItem button:hover{
+  border-color:var(--accent);
+}
 </style>
 </head>
 
@@ -436,6 +535,14 @@ button.primary.recording{
       <option value="pl">Polski</option>
     </select>
   </div>
+
+  <div class="settingItem">
+    <div class="settingLabel" id="currencyLabel">Currency</div>
+    <button id="currencyBtn">
+      <span id="selectedCurrency">USD – US Dollar</span>
+      <span>▼</span>
+    </button>
+  </div>
 </div>
 
 <div id="actionOverlay" class="overlay">
@@ -481,9 +588,83 @@ button.primary.recording{
   </div>
 </div>
 
+<div id="currencySelector" class="currencySelector">
+  <div class="currencyPanel">
+    <h3 id="currencySelectorTitle">Select Currency</h3>
+    <input type="text" id="currencySearch" class="currencySearch" placeholder="Search currency...">
+    <div class="currencyList" id="currencyList"></div>
+  </div>
+</div>
+
 <script>
 const KEY='vc-data';
 let records=JSON.parse(localStorage.getItem(KEY)||'[]');
+
+// Currency data
+const CURRENCIES=[
+  {code:'USD',name:'US Dollar',symbol:'$'},
+  {code:'EUR',name:'Euro',symbol:'€'},
+  {code:'GBP',name:'British Pound',symbol:'£'},
+  {code:'JPY',name:'Japanese Yen',symbol:'¥'},
+  {code:'CNY',name:'Chinese Yuan',symbol:'¥'},
+  {code:'RUB',name:'Russian Ruble',symbol:'₽'},
+  {code:'INR',name:'Indian Rupee',symbol:'₹'},
+  {code:'AUD',name:'Australian Dollar',symbol:'A$'},
+  {code:'CAD',name:'Canadian Dollar',symbol:'C$'},
+  {code:'CHF',name:'Swiss Franc',symbol:'Fr'},
+  {code:'KRW',name:'South Korean Won',symbol:'₩'},
+  {code:'MXN',name:'Mexican Peso',symbol:'$'},
+  {code:'BRL',name:'Brazilian Real',symbol:'R$'},
+  {code:'ZAR',name:'South African Rand',symbol:'R'},
+  {code:'TRY',name:'Turkish Lira',symbol:'₺'},
+  {code:'AED',name:'UAE Dirham',symbol:'د.إ'},
+  {code:'SAR',name:'Saudi Riyal',symbol:'﷼'},
+  {code:'SGD',name:'Singapore Dollar',symbol:'S$'},
+  {code:'HKD',name:'Hong Kong Dollar',symbol:'HK$'},
+  {code:'NOK',name:'Norwegian Krone',symbol:'kr'},
+  {code:'SEK',name:'Swedish Krona',symbol:'kr'},
+  {code:'DKK',name:'Danish Krone',symbol:'kr'},
+  {code:'PLN',name:'Polish Zloty',symbol:'zł'},
+  {code:'THB',name:'Thai Baht',symbol:'฿'},
+  {code:'IDR',name:'Indonesian Rupiah',symbol:'Rp'},
+  {code:'MYR',name:'Malaysian Ringgit',symbol:'RM'},
+  {code:'PHP',name:'Philippine Peso',symbol:'₱'},
+  {code:'CZK',name:'Czech Koruna',symbol:'Kč'},
+  {code:'ILS',name:'Israeli Shekel',symbol:'₪'},
+  {code:'NZD',name:'New Zealand Dollar',symbol:'NZ$'},
+  {code:'HUF',name:'Hungarian Forint',symbol:'Ft'},
+  {code:'CLP',name:'Chilean Peso',symbol:'$'},
+  {code:'ARS',name:'Argentine Peso',symbol:'$'},
+  {code:'COP',name:'Colombian Peso',symbol:'$'},
+  {code:'VND',name:'Vietnamese Dong',symbol:'₫'},
+  {code:'EGP',name:'Egyptian Pound',symbol:'£'},
+  {code:'NGN',name:'Nigerian Naira',symbol:'₦'},
+  {code:'PKR',name:'Pakistani Rupee',symbol:'₨'},
+  {code:'BDT',name:'Bangladeshi Taka',symbol:'৳'},
+  {code:'UAH',name:'Ukrainian Hryvnia',symbol:'₴'},
+  {code:'KZT',name:'Kazakhstani Tenge',symbol:'₸'},
+  {code:'RON',name:'Romanian Leu',symbol:'lei'},
+  {code:'BGN',name:'Bulgarian Lev',symbol:'лв'},
+  {code:'HRK',name:'Croatian Kuna',symbol:'kn'},
+  {code:'QAR',name:'Qatari Riyal',symbol:'﷼'},
+  {code:'KWD',name:'Kuwaiti Dinar',symbol:'د.ك'},
+  {code:'BHD',name:'Bahraini Dinar',symbol:'د.ب'},
+  {code:'OMR',name:'Omani Rial',symbol:'﷼'},
+  {code:'JOD',name:'Jordanian Dinar',symbol:'د.ا'},
+  {code:'LBP',name:'Lebanese Pound',symbol:'ل.ل'}
+];
+
+let currentCurrency=localStorage.getItem('currency')||'USD';
+
+function getCurrencySymbol(){
+  const curr=CURRENCIES.find(c=>c.code===currentCurrency);
+  return curr?curr.symbol:'$';
+}
+
+function getCurrencyDisplay(){
+  const curr=CURRENCIES.find(c=>c.code===currentCurrency);
+  return curr?`${curr.code} – ${curr.name}`:'USD – US Dollar';
+}
 
 const ICONS={
   'Кофе':'🍗',
@@ -514,11 +695,14 @@ function today(){
 function formatAmount(amount){
  // Format amount without unnecessary decimals
  // If integer, show without decimals; if decimal, show without trailing zeros
+ let num;
  if(Number.isInteger(amount)){
-  return amount.toString();
+  num=amount.toString();
+ }else{
+  // Remove trailing zeros after decimal point
+  num=amount.toString().replace(/\.?0+$/,'');
  }
- // Remove trailing zeros after decimal point
- return amount.toString().replace(/\.?0+$/,'');
+ return `${getCurrencySymbol()}${num}`;
 }
 
 function render(){
@@ -973,8 +1157,71 @@ function showExpensesForMonth(monthPrefix){
 }
 
 // make analytics buttons clickable
+document.getElementById('todayBtn').onclick=()=>{
+ if(currentChartType){
+  closeChart();
+ }
+};
 document.getElementById('monthBtn').onclick=()=>openChart('month');
 document.getElementById('yearBtn').onclick=()=>openChart('year');
+
+// currency selector
+const currencySelector=document.getElementById('currencySelector');
+const currencySearch=document.getElementById('currencySearch');
+const currencyList=document.getElementById('currencyList');
+const currencyBtn=document.getElementById('currencyBtn');
+const selectedCurrencyDisplay=document.getElementById('selectedCurrency');
+
+function openCurrencySelector(){
+ currencySelector.classList.add('show');
+ currencySearch.value='';
+ renderCurrencyList('');
+ setTimeout(()=>currencySearch.focus(),100);
+}
+
+function closeCurrencySelector(){
+ currencySelector.classList.remove('show');
+}
+
+function renderCurrencyList(filter){
+ const filterLower=filter.toLowerCase();
+ const filtered=CURRENCIES.filter(c=>
+  c.code.toLowerCase().includes(filterLower)||
+  c.name.toLowerCase().includes(filterLower)
+ );
+
+ currencyList.innerHTML='';
+ filtered.forEach(curr=>{
+  const btn=document.createElement('button');
+  btn.className='currencyItem'+(curr.code===currentCurrency?' selected':'');
+  btn.innerHTML=`<span class="currencyCode">${curr.code}</span><span class="currencyName">${curr.name}</span>`;
+  btn.onclick=()=>selectCurrency(curr.code);
+  currencyList.appendChild(btn);
+ });
+}
+
+function selectCurrency(code){
+ currentCurrency=code;
+ localStorage.setItem('currency',code);
+ selectedCurrencyDisplay.textContent=getCurrencyDisplay();
+ closeCurrencySelector();
+ render();
+ if(currentChartType){
+  if(currentChartType==='month') showMonthChart();
+  else if(currentChartType==='year') showYearChart();
+ }
+}
+
+currencyBtn.onclick=openCurrencySelector;
+currencySelector.onclick=(e)=>{
+ if(e.target===currencySelector) closeCurrencySelector();
+};
+currencySearch.oninput=(e)=>{
+ renderCurrencyList(e.target.value);
+};
+
+// initialize currency display
+selectedCurrencyDisplay.textContent=getCurrencyDisplay();
 
 // translations
 const translations={
@@ -998,7 +1245,10 @@ const translations={
   btnCancel:'Cancel',
   btnSave:'Save',
   settingsTitle:'Settings',
-  langLabel:'Language'
+  langLabel:'Language',
+  currencyLabel:'Currency',
+  currencySelectorTitle:'Select Currency',
+  currencySearchPlaceholder:'Search currency...'
  },
  ru:{
   appTitle:'🎙 Voice Cash',
@@ -1020,7 +1270,10 @@ const translations={
   btnCancel:'Отмена',
   btnSave:'Сохранить',
   settingsTitle:'Настройки',
-  langLabel:'Язык'
+  langLabel:'Язык',
+  currencyLabel:'Валюта',
+  currencySelectorTitle:'Выберите валюту',
+  currencySearchPlaceholder:'Поиск валюты...'
  },
  es:{
   appTitle:'🎙 Voice Cash',
@@ -1042,7 +1295,10 @@ const translations={
   btnCancel:'Cancelar',
   btnSave:'Guardar',
   settingsTitle:'Configuración',
-  langLabel:'Idioma'
+  langLabel:'Idioma',
+  currencyLabel:'Moneda',
+  currencySelectorTitle:'Seleccionar moneda',
+  currencySearchPlaceholder:'Buscar moneda...'
  },
  fr:{
   appTitle:'🎙 Voice Cash',
@@ -1064,7 +1320,10 @@ const translations={
   btnCancel:'Annuler',
   btnSave:'Enregistrer',
   settingsTitle:'Paramètres',
-  langLabel:'Langue'
+  langLabel:'Langue',
+  currencyLabel:'Devise',
+  currencySelectorTitle:'Sélectionner la devise',
+  currencySearchPlaceholder:'Rechercher une devise...'
  },
  de:{
   appTitle:'🎙 Voice Cash',
@@ -1086,7 +1345,10 @@ const translations={
   btnCancel:'Abbrechen',
   btnSave:'Speichern',
   settingsTitle:'Einstellungen',
-  langLabel:'Sprache'
+  langLabel:'Sprache',
+  currencyLabel:'Währung',
+  currencySelectorTitle:'Währung auswählen',
+  currencySearchPlaceholder:'Währung suchen...'
  },
  it:{
   appTitle:'🎙 Voice Cash',
@@ -1108,7 +1370,10 @@ const translations={
   btnCancel:'Annulla',
   btnSave:'Salva',
   settingsTitle:'Impostazioni',
-  langLabel:'Lingua'
+  langLabel:'Lingua',
+  currencyLabel:'Valuta',
+  currencySelectorTitle:'Seleziona valuta',
+  currencySearchPlaceholder:'Cerca valuta...'
  },
  pt:{
   appTitle:'🎙 Voice Cash',
@@ -1130,7 +1395,10 @@ const translations={
   btnCancel:'Cancelar',
   btnSave:'Salvar',
   settingsTitle:'Configurações',
-  langLabel:'Idioma'
+  langLabel:'Idioma',
+  currencyLabel:'Moeda',
+  currencySelectorTitle:'Selecionar moeda',
+  currencySearchPlaceholder:'Pesquisar moeda...'
  },
  zh:{
   appTitle:'🎙 Voice Cash',
@@ -1152,7 +1420,10 @@ const translations={
   btnCancel:'取消',
   btnSave:'保存',
   settingsTitle:'设置',
-  langLabel:'语言'
+  langLabel:'语言',
+  currencyLabel:'货币',
+  currencySelectorTitle:'选择货币',
+  currencySearchPlaceholder:'搜索货币...'
  },
  ja:{
   appTitle:'🎙 Voice Cash',
@@ -1174,7 +1445,10 @@ const translations={
   btnCancel:'キャンセル',
   btnSave:'保存',
   settingsTitle:'設定',
-  langLabel:'言語'
+  langLabel:'言語',
+  currencyLabel:'通貨',
+  currencySelectorTitle:'通貨を選択',
+  currencySearchPlaceholder:'通貨を検索...'
  },
  ko:{
   appTitle:'🎙 Voice Cash',
@@ -1196,7 +1470,10 @@ const translations={
   btnCancel:'취소',
   btnSave:'저장',
   settingsTitle:'설정',
-  langLabel:'언어'
+  langLabel:'언어',
+  currencyLabel:'통화',
+  currencySelectorTitle:'통화 선택',
+  currencySearchPlaceholder:'통화 검색...'
  },
  ar:{
   appTitle:'🎙 Voice Cash',
@@ -1218,7 +1495,10 @@ const translations={
   btnCancel:'إلغاء',
   btnSave:'حفظ',
   settingsTitle:'الإعدادات',
-  langLabel:'اللغة'
+  langLabel:'اللغة',
+  currencyLabel:'العملة',
+  currencySelectorTitle:'اختر العملة',
+  currencySearchPlaceholder:'ابحث عن العملة...'
  },
  hi:{
   appTitle:'🎙 Voice Cash',
@@ -1240,7 +1520,10 @@ const translations={
   btnCancel:'रद्द करें',
   btnSave:'सहेजें',
   settingsTitle:'सेटिंग्स',
-  langLabel:'भाषा'
+  langLabel:'भाषा',
+  currencyLabel:'मुद्रा',
+  currencySelectorTitle:'मुद्रा चुनें',
+  currencySearchPlaceholder:'मुद्रा खोजें...'
  },
  tr:{
   appTitle:'🎙 Voice Cash',
@@ -1262,7 +1545,10 @@ const translations={
   btnCancel:'İptal',
   btnSave:'Kaydet',
   settingsTitle:'Ayarlar',
-  langLabel:'Dil'
+  langLabel:'Dil',
+  currencyLabel:'Para birimi',
+  currencySelectorTitle:'Para birimi seçin',
+  currencySearchPlaceholder:'Para birimi ara...'
  },
  nl:{
   appTitle:'🎙 Voice Cash',
@@ -1284,7 +1570,10 @@ const translations={
   btnCancel:'Annuleren',
   btnSave:'Opslaan',
   settingsTitle:'Instellingen',
-  langLabel:'Taal'
+  langLabel:'Taal',
+  currencyLabel:'Valuta',
+  currencySelectorTitle:'Selecteer valuta',
+  currencySearchPlaceholder:'Zoek valuta...'
  },
  pl:{
   appTitle:'🎙 Voice Cash',
@@ -1306,7 +1595,10 @@ const translations={
   btnCancel:'Anuluj',
   btnSave:'Zapisz',
   settingsTitle:'Ustawienia',
-  langLabel:'Język'
+  langLabel:'Język',
+  currencyLabel:'Waluta',
+  currencySelectorTitle:'Wybierz walutę',
+  currencySearchPlaceholder:'Szukaj waluty...'
  }
 };
 
@@ -1334,6 +1626,9 @@ function applyTranslations(){
  document.getElementById('settingsTitle').textContent=t.settingsTitle;
  document.getElementById('langLabel').textContent=t.langLabel;
  document.getElementById('langSelect').value=currentLang;
+ document.getElementById('currencyLabel').textContent=t.currencyLabel;
+ document.getElementById('currencySelectorTitle').textContent=t.currencySelectorTitle;
+ document.getElementById('currencySearch').placeholder=t.currencySearchPlaceholder;
 }
 
 // navigation
