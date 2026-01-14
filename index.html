@@ -989,6 +989,7 @@ function openChart(type){
   displayedMonth=new Date().getMonth();
   showMonthChart();
  }else if(type==='year'){
+  displayedYear=new Date().getFullYear();
   showYearChart();
  }
 }
@@ -1042,6 +1043,16 @@ function nextMonth(){
   displayedYear++;
  }
  showMonthChart();
+}
+
+function prevYear(){
+ displayedYear--;
+ showYearChart();
+}
+
+function nextYear(){
+ displayedYear++;
+ showYearChart();
 }
 
 function showMonthChart(){
@@ -1130,37 +1141,68 @@ function showMonthChart(){
 
 function showYearChart(){
  const now=new Date();
- const year=now.getFullYear();
+ const currentYear=now.getFullYear();
  const currentMonth=now.getMonth();
- const currentMonthPrefix=`${year}-${String(currentMonth+1).padStart(2,'0')}`;
 
- document.getElementById('chartTitle').textContent='Yearly Analytics';
+ const isCurrentYear=(displayedYear===currentYear);
+
+ const yearText=`${displayedYear}`;
 
  const monthlyTotals={};
+ const monthsWithExpenses=[];
  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
  for(let m=0;m<12;m++){
-  const prefix=`${year}-${String(m+1).padStart(2,'0')}`;
+  const prefix=`${displayedYear}-${String(m+1).padStart(2,'0')}`;
   monthlyTotals[prefix]=0;
  }
 
  records.forEach(r=>{
   const recDate=r.date.slice(0,10);
   const prefix=recDate.slice(0,7);
-  if(recDate.startsWith(String(year))){
+  if(recDate.startsWith(String(displayedYear))){
    monthlyTotals[prefix]=(monthlyTotals[prefix]||0)+r.amount;
+   if(monthlyTotals[prefix]>0 && !monthsWithExpenses.includes(prefix)){
+    monthsWithExpenses.push(prefix);
+   }
   }
  });
 
  const values=Object.values(monthlyTotals);
  const maxVal=Math.max(...values,1);
 
- let chartHTML='<h3>Monthly Expenses</h3><div class="chartScroll"><div class="chart">';
+ // Determine auto-selected month
+ let autoSelectedMonth;
+ if(isCurrentYear){
+  autoSelectedMonth=`${displayedYear}-${String(currentMonth+1).padStart(2,'0')}`;
+ }else if(monthsWithExpenses.length>0){
+  // Find month with highest expenses
+  let maxExpense=0;
+  let maxMonth='';
+  monthsWithExpenses.forEach(m=>{
+   if(monthlyTotals[m]>maxExpense){
+    maxExpense=monthlyTotals[m];
+    maxMonth=m;
+   }
+  });
+  autoSelectedMonth=maxMonth;
+ }else{
+  autoSelectedMonth=`${displayedYear}-${String(currentMonth+1).padStart(2,'0')}`;
+ }
+
+ let chartHTML=`
+  <div class="monthHeader">
+   <button class="monthNav" onclick="prevYear()">←</button>
+   <div class="monthTitle">${yearText}</div>
+   <button class="monthNav" onclick="nextYear()">→</button>
+  </div>
+  <div class="chartScroll"><div class="chart">`;
+
  for(let m=0;m<12;m++){
-  const prefix=`${year}-${String(m+1).padStart(2,'0')}`;
+  const prefix=`${displayedYear}-${String(m+1).padStart(2,'0')}`;
   const val=monthlyTotals[prefix];
   const height=(val/maxVal)*100;
-  const isSelected=prefix===currentMonthPrefix?'selected':'';
+  const isSelected=prefix===autoSelectedMonth?'selected':'';
   chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-month="${prefix}"><div class="barLabel">${monthNames[m]}</div></div>`;
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
@@ -1173,12 +1215,12 @@ function showYearChart(){
    bar.classList.add('selected');
    const monthPrefix=bar.dataset.month;
    selectedPeriod=monthPrefix;
-   showExpensesForMonth(monthPrefix);
+   showMonthSummary(monthPrefix);
   };
  });
 
- selectedPeriod=currentMonthPrefix;
- showExpensesForMonth(currentMonthPrefix);
+ selectedPeriod=autoSelectedMonth;
+ showMonthSummary(autoSelectedMonth);
 
  setTimeout(()=>{
   const selectedBar=document.querySelector('.bar.selected');
@@ -1230,6 +1272,40 @@ function showExpensesForDate(date){
    actionOverlay.classList.add('show');
   };
  });
+}
+
+function showMonthSummary(monthPrefix){
+ const monthRecords=records.filter(r=>r.date.slice(0,10).startsWith(monthPrefix));
+ const container=document.getElementById('expenseList');
+
+ const parts=monthPrefix.split('-');
+ const year=parseInt(parts[0]);
+ const month=parseInt(parts[1])-1;
+ const monthYearDisplay=`${getMonthName(month)} ${year}`;
+
+ if(monthRecords.length===0){
+  container.innerHTML=`<h4>${monthYearDisplay}</h4><p style="color:var(--muted);margin-top:8px;">No expenses this month</p>`;
+  return;
+ }
+
+ const totalExpenses=monthRecords.reduce((sum,r)=>sum+r.amount,0);
+ const daysInMonth=new Date(year,month+1,0).getDate();
+ const avgPerDay=totalExpenses/daysInMonth;
+
+ let html=`
+  <h4>${monthYearDisplay}</h4>
+  <div class="row" style="margin-top:16px;">
+   <div class="card">
+    <div class="label">Total</div>
+    <div class="value">${formatAmount(totalExpenses)}</div>
+   </div>
+   <div class="card">
+    <div class="label">Avg/Day</div>
+    <div class="value">${formatAmount(avgPerDay)}</div>
+   </div>
+  </div>`;
+
+ container.innerHTML=html;
 }
 
 function showExpensesForMonth(monthPrefix){
