@@ -274,9 +274,9 @@ button.primary.recording{
   min-width:max-content;
 }
 .bar{
-  width:32px;
+  width:48px;
   background:var(--accent);
-  border-radius:4px 4px 0 0;
+  border-radius:6px 6px 0 0;
   min-height:2px;
   cursor:pointer;
   transition:all 0.2s;
@@ -293,9 +293,41 @@ button.primary.recording{
   bottom:-24px;
   left:50%;
   transform:translateX(-50%);
-  font-size:11px;
+  font-size:12px;
   color:var(--muted);
   white-space:nowrap;
+  font-weight:500;
+}
+.monthHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:20px;
+  padding:0 10px;
+}
+.monthNav{
+  background:transparent;
+  border:none;
+  color:var(--accent);
+  font-size:24px;
+  cursor:pointer;
+  padding:8px 12px;
+  border-radius:8px;
+}
+.monthNav:hover{
+  background:rgba(124,92,255,0.1);
+}
+.monthNav:disabled{
+  color:var(--muted);
+  opacity:0.3;
+  cursor:not-allowed;
+}
+.monthTitle{
+  font-size:20px;
+  font-weight:600;
+  color:var(--text);
+  min-width:200px;
+  text-align:center;
 }
 .expenseList{
   margin-top:20px;
@@ -946,12 +978,19 @@ document.getElementById('saveEdit').onclick=(e)=>{
 const chartPanel=document.getElementById('chartPanel');
 let currentChartType=null;
 let selectedPeriod=null;
+let displayedYear=new Date().getFullYear();
+let displayedMonth=new Date().getMonth();
 
 function openChart(type){
  currentChartType=type;
  chartPanel.classList.add('show');
- if(type==='month') showMonthChart();
- else if(type==='year') showYearChart();
+ if(type==='month'){
+  displayedYear=new Date().getFullYear();
+  displayedMonth=new Date().getMonth();
+  showMonthChart();
+ }else if(type==='year'){
+  showYearChart();
+ }
 }
 
 function closeChart(){
@@ -965,37 +1004,103 @@ chartPanel.onclick=(e)=>{
  if(e.target===chartPanel) closeChart();
 };
 
+function getMonthName(monthIndex){
+ const monthNames={
+  en:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  ru:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+  es:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+  fr:['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+  de:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+  it:['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+  pt:['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+  zh:['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+  ja:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+  ko:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+  ar:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+  hi:['जनवरी','फ़रवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'],
+  tr:['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
+  nl:['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'],
+  pl:['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
+ };
+ const names=monthNames[currentLang]||monthNames.en;
+ return names[monthIndex];
+}
+
+function prevMonth(){
+ displayedMonth--;
+ if(displayedMonth<0){
+  displayedMonth=11;
+  displayedYear--;
+ }
+ showMonthChart();
+}
+
+function nextMonth(){
+ displayedMonth++;
+ if(displayedMonth>11){
+  displayedMonth=0;
+  displayedYear++;
+ }
+ showMonthChart();
+}
+
 function showMonthChart(){
  const now=new Date();
- const year=now.getFullYear();
- const month=now.getMonth();
- const daysInMonth=new Date(year,month+1,0).getDate();
+ const currentYear=now.getFullYear();
+ const currentMonth=now.getMonth();
  const todayDate=today();
 
- document.getElementById('chartTitle').textContent='Monthly Analytics';
+ const daysInMonth=new Date(displayedYear,displayedMonth+1,0).getDate();
+ const isCurrentMonth=(displayedYear===currentYear && displayedMonth===currentMonth);
+
+ const monthYearText=`${getMonthName(displayedMonth)} ${displayedYear}`;
 
  const dailyTotals={};
+ const daysWithExpenses=[];
+
  for(let d=1;d<=daysInMonth;d++){
-  const date=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const date=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   dailyTotals[date]=0;
  }
 
  records.forEach(r=>{
   const recDate=r.date.slice(0,10);
-  if(recDate.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)){
+  if(recDate.startsWith(`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}`)){
    dailyTotals[recDate]=(dailyTotals[recDate]||0)+r.amount;
+   if(!daysWithExpenses.includes(recDate)){
+    daysWithExpenses.push(recDate);
+   }
   }
  });
 
  const values=Object.values(dailyTotals);
  const maxVal=Math.max(...values,1);
 
- let chartHTML='<h3>Daily Expenses</h3><div class="chartScroll"><div class="chart">';
+ // Determine auto-selected day
+ let autoSelectedDate;
+ if(isCurrentMonth){
+  autoSelectedDate=todayDate;
+ }else if(daysWithExpenses.length>0){
+  daysWithExpenses.sort();
+  autoSelectedDate=daysWithExpenses[daysWithExpenses.length-1];
+ }else{
+  const lastDay=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+  autoSelectedDate=lastDay;
+ }
+
+ let chartHTML=`
+  <div class="monthHeader">
+   <button class="monthNav" onclick="prevMonth()">←</button>
+   <div class="monthTitle">${monthYearText}</div>
+   <button class="monthNav" onclick="nextMonth()">→</button>
+  </div>
+  <div class="chartScroll"><div class="chart">`;
+
  for(let d=1;d<=daysInMonth;d++){
-  const date=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const date=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   const val=dailyTotals[date];
   const height=(val/maxVal)*100;
-  const isSelected=date===todayDate?'selected':'';
+  const isSelected=date===autoSelectedDate?'selected':'';
   chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-date="${date}"><div class="barLabel">${d}</div></div>`;
  }
  chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
@@ -1012,8 +1117,8 @@ function showMonthChart(){
   };
  });
 
- selectedPeriod=todayDate;
- showExpensesForDate(todayDate);
+ selectedPeriod=autoSelectedDate;
+ showExpensesForDate(autoSelectedDate);
 
  setTimeout(()=>{
   const selectedBar=document.querySelector('.bar.selected');
@@ -1083,6 +1188,14 @@ function showYearChart(){
  },100);
 }
 
+function formatDateDisplay(dateStr){
+ const parts=dateStr.split('-');
+ const year=parseInt(parts[0]);
+ const month=parseInt(parts[1])-1;
+ const day=parseInt(parts[2]);
+ return `${getMonthName(month)} ${day}`;
+}
+
 function showExpensesForDate(date){
  const dayRecords=records.filter(r=>r.date.slice(0,10)===date);
  const container=document.getElementById('expenseList');
@@ -1092,7 +1205,8 @@ function showExpensesForDate(date){
   return;
  }
 
- let html=`<h4>Expenses for ${date}</h4>`;
+ const dateDisplay=formatDateDisplay(date);
+ let html=`<h4>${dateDisplay}</h4>`;
  dayRecords.forEach(r=>{
   html+=`
    <div class="record">
