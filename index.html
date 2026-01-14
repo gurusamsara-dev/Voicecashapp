@@ -545,7 +545,7 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v1.3.0</div>
+<div class="version">v1.3.1-debug</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
@@ -968,17 +968,29 @@ function closeEditPanel(){
 
 function saveEdit(){
  const record=records.find(r=>r.id===currentRecordId);
+ console.log('saveEdit called, currentRecordId:', currentRecordId);
+ console.log('record found:', !!record);
  if(!record) return;
  const itemVal=document.getElementById('editItem').value.trim();
  const catVal=document.getElementById('editCategory').value.trim();
  const amountVal=document.getElementById('editAmount').value;
  const dateVal=document.getElementById('editDate').value;
- if(!itemVal || !catVal || !amountVal || !dateVal) return;
+ console.log('Values:', {itemVal, catVal, amountVal, dateVal});
+ if(!itemVal || !catVal || !amountVal || !dateVal){
+  console.log('Validation failed:', {
+   itemVal: !itemVal,
+   catVal: !catVal,
+   amountVal: !amountVal,
+   dateVal: !dateVal
+  });
+  return;
+ }
  record.item=itemVal;
  record.category=catVal;
  record.amount=+amountVal;
  record.date=dateVal;
  localStorage.setItem(KEY,JSON.stringify(records));
+ console.log('Record saved, closing panel');
  closeEditPanel();
  if(currentChartType && selectedPeriod){
   if(currentChartType==='month') showMonthChart();
