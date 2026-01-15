@@ -791,19 +791,19 @@ button.primary.recording{
 /* settings */
 .settingsHandle{
   position:fixed;
-  right:-30px;
+  left:-30px;
   top:16px;
   width:60px;
   height:44px;
   background:linear-gradient(135deg,rgba(124,92,255,0.9),rgba(124,92,255,0.7));
-  border-radius:12px 0 0 12px;
+  border-radius:0 12px 12px 0;
   cursor:pointer;
   z-index:10000;
   transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
   display:flex;
   align-items:center;
-  justify-content:flex-start;
-  padding-left:8px;
+  justify-content:flex-end;
+  padding-right:8px;
 }
 
 .settingsHandle::before{
@@ -815,7 +815,7 @@ button.primary.recording{
 }
 
 .settingsHandle:hover{
-  right:-24px;
+  left:-24px;
   background:linear-gradient(135deg,rgba(124,92,255,1),rgba(124,92,255,0.85));
 }
 
