@@ -671,49 +671,42 @@ button.primary.recording{
 /* settings */
 .settingsHandle{
   position:fixed;
-  right:0;
-  top:50%;
-  transform:translateY(-50%);
-  width:6px;
-  height:80px;
-  background:linear-gradient(180deg,rgba(124,92,255,0.4),rgba(124,92,255,0.7),rgba(124,92,255,0.4));
-  border-radius:8px 0 0 8px;
+  right:-30px;
+  top:16px;
+  width:60px;
+  height:44px;
+  background:linear-gradient(135deg,rgba(124,92,255,0.9),rgba(124,92,255,0.7));
+  border-radius:12px 0 0 12px;
   cursor:pointer;
-  z-index:2000;
+  z-index:10000;
   transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
-  box-shadow:-2px 0 8px rgba(124,92,255,0.3);
-  animation:handlePulse 3s ease-in-out infinite;
-}
-
-.settingsHandle:hover{
-  width:12px;
-  background:linear-gradient(180deg,rgba(124,92,255,0.6),rgba(124,92,255,0.9),rgba(124,92,255,0.6));
-  box-shadow:-4px 0 12px rgba(124,92,255,0.5);
+  box-shadow:-4px 2px 12px rgba(124,92,255,0.4);
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  padding-left:8px;
 }
 
 .settingsHandle::before{
   content:'⚙';
-  position:absolute;
-  left:-20px;
-  top:50%;
-  transform:translateY(-50%);
-  font-size:14px;
-  opacity:0;
-  transition:all 0.3s ease;
-  color:var(--accent);
+  font-size:20px;
+  color:#fff;
+  animation:handleRotate 4s linear infinite;
+  will-change:transform;
 }
 
-.settingsHandle:hover::before{
-  left:-24px;
-  opacity:1;
+.settingsHandle:hover{
+  right:-24px;
+  background:linear-gradient(135deg,rgba(124,92,255,1),rgba(124,92,255,0.85));
+  box-shadow:-6px 2px 16px rgba(124,92,255,0.6);
 }
 
-@keyframes handlePulse{
-  0%,100%{opacity:0.6}
-  50%{opacity:1}
+@keyframes handleRotate{
+  0%,100%{transform:rotate(0deg)}
+  50%{transform:rotate(180deg)}
 }
 
-body.paused .settingsHandle{
+body.paused .settingsHandle::before{
   animation:none;
 }
 
@@ -721,16 +714,15 @@ body.paused .settingsHandle{
   position:fixed;
   top:0;
   right:0;
-  bottom:0;
-  width:90%;
-  max-width:400px;
+  width:100vw;
+  height:100vh;
   background:var(--bg);
   transform:translateX(100%);
   transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  z-index:1999;
-  box-shadow:-4px 0 20px rgba(0,0,0,0.5);
+  z-index:9999;
   overflow-y:auto;
   padding:24px;
+  padding-top:70px;
 }
 
 .settingsPanel.open{
@@ -742,9 +734,9 @@ body.paused .settingsHandle{
   position:absolute;
   top:0;
   left:0;
-  width:4px;
-  height:100%;
-  background:linear-gradient(180deg,var(--accent),rgba(124,92,255,0.3));
+  width:100%;
+  height:4px;
+  background:linear-gradient(90deg,rgba(124,92,255,0.3),var(--accent),rgba(124,92,255,0.3));
 }
 
 .page{
@@ -761,19 +753,7 @@ body.paused .settingsHandle{
   border-bottom:1px solid rgba(255,255,255,0.1);
 }
 .closeSettingsBtn{
-  background:rgba(124,92,255,0.1);
-  border:none;
-  color:var(--accent);
-  font-size:20px;
-  cursor:pointer;
-  padding:8px 12px;
-  margin-right:12px;
-  border-radius:8px;
-  transition:all 0.3s ease;
-}
-.closeSettingsBtn:hover{
-  background:rgba(124,92,255,0.2);
-  transform:scale(1.1);
+  display:none;
 }
 .settingsHeader h2{
   margin:0;
@@ -945,7 +925,7 @@ body.paused .settingsHandle{
 </head>
 
 <body>
-<div class="version">v2.6.0</div>
+<div class="version">v2.7.0</div>
 
 <!-- Floating Settings Handle -->
 <div class="settingsHandle" id="settingsHandle"></div>
@@ -2842,27 +2822,12 @@ function applyTranslations(){
 // Settings panel control
 const settingsPanel=document.getElementById('settingsPanel');
 const settingsHandle=document.getElementById('settingsHandle');
-const closeSettings=document.getElementById('closeSettings');
 
-function openSettings(){
- settingsPanel.classList.add('open');
+function toggleSettings(){
+ settingsPanel.classList.toggle('open');
 }
 
-function closeSettingsPanel(){
- settingsPanel.classList.remove('open');
-}
-
-settingsHandle.onclick=openSettings;
-closeSettings.onclick=closeSettingsPanel;
-
-// Close settings when clicking outside
-document.addEventListener('click',(e)=>{
- if(settingsPanel.classList.contains('open') &&
-    !settingsPanel.contains(e.target) &&
-    !settingsHandle.contains(e.target)){
-  closeSettingsPanel();
- }
-});
+settingsHandle.onclick=toggleSettings;
 
 document.getElementById('langSelect').onchange=(e)=>{
  currentLang=e.target.value;
