@@ -186,6 +186,42 @@ button.primary.recording{
   }
 }
 
+@keyframes slideInFromRight{
+  from{
+    opacity:0;
+    transform:translateX(20px);
+  }
+  to{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft{
+  from{
+    opacity:0;
+    transform:translateX(-20px);
+  }
+  to{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
+.view-content{
+  animation-duration:0.25s;
+  animation-timing-function:ease-out;
+  animation-fill-mode:both;
+}
+
+.view-content.slide-left{
+  animation-name:slideInFromRight;
+}
+
+.view-content.slide-right{
+  animation-name:slideInFromLeft;
+}
+
 .status{
   text-align:center;
   color:var(--muted);
@@ -528,6 +564,7 @@ button.primary.recording{
   font-size:24px;
   cursor:pointer;
   padding:8px;
+  z-index:1000;
 }
 .page{
   display:none;
@@ -723,12 +760,12 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v2.3.0</div>
+<div class="version">v2.4.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
   <div class="app">
-    <h1 id="appTitle"><span class="mic-icon">🎙</span> Voice Cash</h1>
+    <h1 id="appTitle"><span class="mic-icon">💸</span> Voice Cash</h1>
 
     <div class="topbar">
       <button class="active" id="todayBtn">Траты за день</button>
@@ -751,7 +788,7 @@ button.primary.recording{
       </div>
     </div>
 
-    <button id="recBtn" class="primary">🎤 Start recording</button>
+    <button id="recBtn" class="primary">Start recording</button>
     <div class="status" id="status"></div>
 
     <div class="viewToggle">
@@ -1417,6 +1454,8 @@ let currentChartType=null;
 let selectedPeriod=null;
 let displayedYear=new Date().getFullYear();
 let displayedMonth=new Date().getMonth();
+let currentMonthlyView='expenses';
+let currentYearlyView='expenses';
 
 function openChart(type){
  currentChartType=type;
@@ -1553,95 +1592,133 @@ function showMonthChart(){
    <div class="monthTitle">${monthYearText}</div>
    <button class="monthNav" onclick="nextMonth()">→</button>
   </div>
-  <div class="chartScroll" style="padding-bottom:30px;"><div class="chart">`;
+  <div class="viewToggle">
+   <button class="viewToggleBtn ${currentMonthlyView==='expenses'?'active':''}" data-view="expenses" data-context="monthly">Expenses</button>
+   <button class="viewToggleBtn ${currentMonthlyView==='percentages'?'active':''}" data-view="percentages" data-context="monthly">Percentages</button>
+  </div>
+  <div class="view-content" id="monthlyViewContent">`;
 
- for(let d=1;d<=daysInMonth;d++){
-  const date=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const val=dailyTotals[date];
-  const height=(val/maxVal)*100;
-  const isSelected=date===autoSelectedDate?'selected':'';
-  chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-date="${date}"><div class="barLabel">${d}</div></div>`;
+ if(currentMonthlyView==='expenses'){
+  // Expenses view: Show daily bar chart + expense list
+  chartHTML+=`<div class="chartScroll" style="padding-bottom:30px;"><div class="chart">`;
+  for(let d=1;d<=daysInMonth;d++){
+   const date=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+   const val=dailyTotals[date];
+   const height=(val/maxVal)*100;
+   const isSelected=date===autoSelectedDate?'selected':'';
+   chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-date="${date}"><div class="barLabel">${d}</div></div>`;
+  }
+  chartHTML+='</div></div>';
+  chartHTML+='<div id="expenseList" class="expenseList"></div>';
+ }else{
+  // Percentages view: Show category breakdown
+  if(monthTotal>0){
+   chartHTML+=`<div class="categoryChart" style="margin-top:0;"><h4 style="margin:16px 0 12px;font-size:14px;color:var(--muted);">Category Breakdown</h4>`;
+
+   // Sort categories by amount (highest first)
+   const categoryArray=Object.entries(categoryTotals).map(([name,amount])=>{
+    const cat=Object.values(CATEGORIES).find(c=>c.name===name)||CATEGORIES.uncategorized;
+    return {name,amount,cat};
+   }).sort((a,b)=>b.amount-a.amount);
+
+   categoryArray.forEach(({name,amount,cat})=>{
+    const percentage=((amount/monthTotal)*100).toFixed(1);
+    chartHTML+=`
+     <div class="categoryBar" data-category="${name}">
+      <div class="categoryBarLabel">
+       <span>${cat.emoji} ${name}</span>
+       <span>${formatAmount(amount)} (${percentage}%)</span>
+      </div>
+      <div class="categoryBarTrack">
+       <div class="categoryBarFill" style="width:${percentage}%;background:${cat.color}"></div>
+      </div>
+     </div>`;
+   });
+
+   chartHTML+='</div>';
+  }else{
+   chartHTML+=`<p style="text-align:center;color:var(--muted);padding:40px 20px;">No expenses for this month</p>`;
+  }
+  chartHTML+='<div id="expenseList" class="expenseList"></div>';
  }
- chartHTML+='</div></div>';
 
- // Add category percentage chart
- if(monthTotal>0){
-  chartHTML+=`<div class="categoryChart"><h4 style="margin:16px 0 12px;font-size:14px;color:var(--muted);">Category Breakdown</h4>`;
-
-  // Sort categories by amount (highest first)
-  const categoryArray=Object.entries(categoryTotals).map(([name,amount])=>{
-   const cat=Object.values(CATEGORIES).find(c=>c.name===name)||CATEGORIES.uncategorized;
-   return {name,amount,cat};
-  }).sort((a,b)=>b.amount-a.amount);
-
-  categoryArray.forEach(({name,amount,cat})=>{
-   const percentage=((amount/monthTotal)*100).toFixed(1);
-   chartHTML+=`
-    <div class="categoryBar" data-category="${name}">
-     <div class="categoryBarLabel">
-      <span>${cat.emoji} ${name}</span>
-      <span>${percentage}%</span>
-     </div>
-     <div class="categoryBarTrack">
-      <div class="categoryBarFill" style="width:${percentage}%;background:${cat.color}"></div>
-     </div>
-    </div>`;
-  });
-
-  chartHTML+='</div>';
- }
-
- chartHTML+='<div id="expenseList" class="expenseList"></div>';
+ chartHTML+='</div>';
 
  // Insert HTML
  const container=document.getElementById('chartContainer');
  container.innerHTML=chartHTML;
 
- // Attach event handlers to each bar individually
- const bars=container.querySelectorAll('.bar');
- bars.forEach(bar=>{
-  const selectBar=()=>{
-   bars.forEach(b=>b.classList.remove('selected'));
-   bar.classList.add('selected');
-   const date=bar.getAttribute('data-date');
-   selectedPeriod=date;
-   showExpensesForDate(date);
-  };
+ // Attach toggle event handlers
+ const toggleBtns=container.querySelectorAll('.viewToggleBtn[data-context="monthly"]');
+ toggleBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+   const newView=btn.getAttribute('data-view');
+   if(newView!==currentMonthlyView){
+    const oldView=currentMonthlyView;
+    currentMonthlyView=newView;
 
-  bar.addEventListener('click',selectBar);
-  bar.addEventListener('touchend',(e)=>{
-   e.preventDefault();
-   selectBar();
+    // Determine animation direction
+    const viewContent=document.getElementById('monthlyViewContent');
+    viewContent.classList.remove('slide-left','slide-right');
+
+    if(oldView==='expenses' && newView==='percentages'){
+     viewContent.classList.add('slide-left');
+    }else if(oldView==='percentages' && newView==='expenses'){
+     viewContent.classList.add('slide-right');
+    }
+
+    showMonthChart();
+   }
   });
  });
 
- // Attach event handlers to category bars
- const categoryBars=container.querySelectorAll('.categoryBar');
- categoryBars.forEach(catBar=>{
-  const selectCategoryBar=()=>{
-   const categoryName=catBar.getAttribute('data-category');
-   selectedPeriod=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}`;
-   showCategoryExpenses(categoryName,selectedPeriod);
-  };
+ if(currentMonthlyView==='expenses'){
+  // Attach event handlers to each bar individually
+  const bars=container.querySelectorAll('.bar');
+  bars.forEach(bar=>{
+   const selectBar=()=>{
+    bars.forEach(b=>b.classList.remove('selected'));
+    bar.classList.add('selected');
+    const date=bar.getAttribute('data-date');
+    selectedPeriod=date;
+    showExpensesForDate(date);
+   };
 
-  catBar.addEventListener('click',selectCategoryBar);
-  catBar.addEventListener('touchend',(e)=>{
-   e.preventDefault();
-   selectCategoryBar();
+   bar.addEventListener('click',selectBar);
+   bar.addEventListener('touchend',(e)=>{
+    e.preventDefault();
+    selectBar();
+   });
   });
- });
 
- // Show initial data
- selectedPeriod=autoSelectedDate;
- showExpensesForDate(autoSelectedDate);
+  // Show initial data
+  selectedPeriod=autoSelectedDate;
+  showExpensesForDate(autoSelectedDate);
 
- // Scroll to selected bar
- setTimeout(()=>{
-  const selectedBar=container.querySelector('.bar.selected');
-  if(selectedBar){
-   selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
-  }
- },100);
+  // Scroll to selected bar
+  setTimeout(()=>{
+   const selectedBar=container.querySelector('.bar.selected');
+   if(selectedBar){
+    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+   }
+  },100);
+ }else{
+  // Attach event handlers to category bars in percentages view
+  const categoryBars=container.querySelectorAll('.categoryBar');
+  categoryBars.forEach(catBar=>{
+   const selectCategoryBar=()=>{
+    const categoryName=catBar.getAttribute('data-category');
+    selectedPeriod=`${displayedYear}-${String(displayedMonth+1).padStart(2,'0')}`;
+    showCategoryExpenses(categoryName,selectedPeriod);
+   };
+
+   catBar.addEventListener('click',selectCategoryBar);
+   catBar.addEventListener('touchend',(e)=>{
+    e.preventDefault();
+    selectCategoryBar();
+   });
+  });
+ }
 }
 
 function showYearChart(){
@@ -1655,6 +1732,8 @@ function showYearChart(){
 
  const monthlyTotals={};
  const monthsWithExpenses=[];
+ const categoryTotals={};
+ let yearTotal=0;
  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
  for(let m=0;m<12;m++){
@@ -1670,6 +1749,11 @@ function showYearChart(){
    if(monthlyTotals[prefix]>0 && !monthsWithExpenses.includes(prefix)){
     monthsWithExpenses.push(prefix);
    }
+
+   // Track category totals for the year
+   const category=r.category||CATEGORIES.uncategorized.name;
+   categoryTotals[category]=(categoryTotals[category]||0)+r.amount;
+   yearTotal+=r.amount;
   }
  });
 
@@ -1701,50 +1785,128 @@ function showYearChart(){
    <div class="monthTitle">${yearText}</div>
    <button class="monthNav" onclick="nextYear()">→</button>
   </div>
-  <div class="chartScroll" style="padding-bottom:30px;"><div class="chart">`;
+  <div class="viewToggle">
+   <button class="viewToggleBtn ${currentYearlyView==='expenses'?'active':''}" data-view="expenses" data-context="yearly">Expenses</button>
+   <button class="viewToggleBtn ${currentYearlyView==='percentages'?'active':''}" data-view="percentages" data-context="yearly">Percentages</button>
+  </div>
+  <div class="view-content" id="yearlyViewContent">`;
 
- for(let m=0;m<12;m++){
-  const prefix=`${displayedYear}-${String(m+1).padStart(2,'0')}`;
-  const val=monthlyTotals[prefix];
-  const height=(val/maxVal)*100;
-  const isSelected=prefix===autoSelectedMonth?'selected':'';
-  chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-month="${prefix}"><div class="barLabel">${monthNames[m]}</div></div>`;
+ if(currentYearlyView==='expenses'){
+  // Expenses view: Show monthly bar chart + expense list
+  chartHTML+=`<div class="chartScroll" style="padding-bottom:30px;"><div class="chart">`;
+  for(let m=0;m<12;m++){
+   const prefix=`${displayedYear}-${String(m+1).padStart(2,'0')}`;
+   const val=monthlyTotals[prefix];
+   const height=(val/maxVal)*100;
+   const isSelected=prefix===autoSelectedMonth?'selected':'';
+   chartHTML+=`<div class="bar ${isSelected}" style="height:${height}%" data-month="${prefix}"><div class="barLabel">${monthNames[m]}</div></div>`;
+  }
+  chartHTML+='</div></div>';
+  chartHTML+='<div id="expenseList" class="expenseList"></div>';
+ }else{
+  // Percentages view: Show category breakdown for the year
+  if(yearTotal>0){
+   chartHTML+=`<div class="categoryChart" style="margin-top:0;"><h4 style="margin:16px 0 12px;font-size:14px;color:var(--muted);">Category Breakdown</h4>`;
+
+   const categoryArray=Object.entries(categoryTotals).map(([name,amount])=>{
+    const cat=Object.values(CATEGORIES).find(c=>c.name===name)||CATEGORIES.uncategorized;
+    return {name,amount,cat};
+   }).sort((a,b)=>b.amount-a.amount);
+
+   categoryArray.forEach(({name,amount,cat})=>{
+    const percentage=((amount/yearTotal)*100).toFixed(1);
+    chartHTML+=`
+     <div class="categoryBar" data-category="${name}" data-year-category="true">
+      <div class="categoryBarLabel">
+       <span>${cat.emoji} ${name}</span>
+       <span>${formatAmount(amount)} (${percentage}%)</span>
+      </div>
+      <div class="categoryBarTrack">
+       <div class="categoryBarFill" style="width:${percentage}%;background:${cat.color}"></div>
+      </div>
+     </div>`;
+   });
+
+   chartHTML+='</div>';
+  }else{
+   chartHTML+=`<p style="text-align:center;color:var(--muted);padding:40px 20px;">No expenses for this year</p>`;
+  }
+  chartHTML+='<div id="expenseList" class="expenseList"></div>';
  }
- chartHTML+='</div></div><div id="expenseList" class="expenseList"></div>';
+
+ chartHTML+='</div>';
 
  const container=document.getElementById('chartContainer');
+ container.innerHTML=chartHTML;
 
- // Remove old event listeners by cloning
- const newContainer=container.cloneNode(false);
- newContainer.innerHTML=chartHTML;
- container.parentNode.replaceChild(newContainer,container);
+ // Attach toggle event handlers
+ const toggleBtns=container.querySelectorAll('.viewToggleBtn[data-context="yearly"]');
+ toggleBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+   const newView=btn.getAttribute('data-view');
+   if(newView!==currentYearlyView){
+    const oldView=currentYearlyView;
+    currentYearlyView=newView;
 
- // Attach click handler directly to container with event delegation
- const handleBarSelect=(e)=>{
-  const bar=e.target.closest('.bar');
-  if(bar && bar.dataset.month){
-   e.preventDefault();
-   e.stopPropagation();
-   newContainer.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
-   bar.classList.add('selected');
-   const monthPrefix=bar.dataset.month;
-   selectedPeriod=monthPrefix;
-   showMonthSummary(monthPrefix);
-  }
- };
+    // Determine animation direction
+    const viewContent=document.getElementById('yearlyViewContent');
+    viewContent.classList.remove('slide-left','slide-right');
 
- newContainer.addEventListener('click',handleBarSelect);
- newContainer.addEventListener('touchend',handleBarSelect);
+    if(oldView==='expenses' && newView==='percentages'){
+     viewContent.classList.add('slide-left');
+    }else if(oldView==='percentages' && newView==='expenses'){
+     viewContent.classList.add('slide-right');
+    }
 
- selectedPeriod=autoSelectedMonth;
- showMonthSummary(autoSelectedMonth);
+    showYearChart();
+   }
+  });
+ });
 
- setTimeout(()=>{
-  const selectedBar=newContainer.querySelector('.bar.selected');
-  if(selectedBar){
-   selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
-  }
- },100);
+ if(currentYearlyView==='expenses'){
+  // Attach click handler for bar chart
+  const handleBarSelect=(e)=>{
+   const bar=e.target.closest('.bar');
+   if(bar && bar.dataset.month){
+    e.preventDefault();
+    e.stopPropagation();
+    container.querySelectorAll('.bar').forEach(b=>b.classList.remove('selected'));
+    bar.classList.add('selected');
+    const monthPrefix=bar.dataset.month;
+    selectedPeriod=monthPrefix;
+    showMonthSummary(monthPrefix);
+   }
+  };
+
+  container.addEventListener('click',handleBarSelect);
+  container.addEventListener('touchend',handleBarSelect);
+
+  selectedPeriod=autoSelectedMonth;
+  showMonthSummary(autoSelectedMonth);
+
+  setTimeout(()=>{
+   const selectedBar=container.querySelector('.bar.selected');
+   if(selectedBar){
+    selectedBar.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+   }
+  },100);
+ }else{
+  // Attach event handlers to category bars in percentages view
+  const categoryBars=container.querySelectorAll('.categoryBar[data-year-category="true"]');
+  categoryBars.forEach(catBar=>{
+   const selectCategoryBar=()=>{
+    const categoryName=catBar.getAttribute('data-category');
+    selectedPeriod=String(displayedYear);
+    showYearlyCategoryExpenses(categoryName,displayedYear);
+   };
+
+   catBar.addEventListener('click',selectCategoryBar);
+   catBar.addEventListener('touchend',(e)=>{
+    e.preventDefault();
+    selectCategoryBar();
+   });
+  });
+ }
 }
 
 function formatDateDisplay(dateStr){
@@ -1836,6 +1998,74 @@ function showCategoryExpenses(categoryName,monthPrefix){
      <div class="recMain">
       <div class="recTitle">${r.item}</div>
       <div class="recMeta">${new Date(r.date).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
+     </div>
+     <div class="recRight">
+      <div class="amount">${formatAmount(r.amount)}</div>
+      <button class="menuBtn" data-id="${r.id}">⋮</button>
+     </div>
+    </div>`;
+  });
+
+  html+='</div>';
+ });
+
+ container.innerHTML=html;
+
+ container.querySelectorAll('.menuBtn').forEach(btn=>{
+  btn.onclick=()=>{
+   currentRecordId=btn.dataset.id;
+   actionOverlay.classList.add('show');
+  };
+ });
+}
+
+function showYearlyCategoryExpenses(categoryName,year){
+ // Filter records by category and year
+ const categoryRecords=records.filter(r=>{
+  const recDate=r.date.slice(0,10);
+  const recCategory=r.category||CATEGORIES.uncategorized.name;
+  return recDate.startsWith(String(year)) && recCategory===categoryName;
+ });
+
+ const container=document.getElementById('expenseList');
+
+ if(categoryRecords.length===0){
+  container.innerHTML=`<h4>${categoryName}</h4><p style="color:var(--muted);margin-top:8px;">No expenses in this category</p>`;
+  return;
+ }
+
+ // Group by month
+ const byMonth={};
+ categoryRecords.forEach(r=>{
+  const monthPrefix=r.date.slice(0,7);
+  if(!byMonth[monthPrefix]) byMonth[monthPrefix]=[];
+  byMonth[monthPrefix].push(r);
+ });
+
+ const cat=Object.values(CATEGORIES).find(c=>c.name===categoryName)||CATEGORIES.uncategorized;
+ let html=`<h4>${cat.emoji} ${categoryName} - ${year}</h4>`;
+
+ // Sort months chronologically
+ Object.keys(byMonth).sort().forEach(monthPrefix=>{
+  const parts=monthPrefix.split('-');
+  const monthNum=parseInt(parts[1])-1;
+  const monthDisplay=getMonthName(monthNum);
+  const monthRecords=byMonth[monthPrefix];
+  const monthTotal=monthRecords.reduce((sum,r)=>sum+r.amount,0);
+
+  html+=`<div style="margin-top:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">
+   <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+    <span style="font-size:13px;color:var(--muted);">${monthDisplay}</span>
+    <span style="font-size:13px;font-weight:600;color:var(--accent);">${formatAmount(monthTotal)}</span>
+   </div>`;
+
+  monthRecords.forEach(r=>{
+   html+=`
+    <div class="record">
+     <div class="icon">${cat.emoji}</div>
+     <div class="recMain">
+      <div class="recTitle">${r.item}</div>
+      <div class="recMeta">${formatDateDisplay(r.date.slice(0,10))}</div>
      </div>
      <div class="recRight">
       <div class="amount">${formatAmount(r.amount)}</div>
