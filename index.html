@@ -135,7 +135,10 @@ body.paused h1 .app-logo::after{
 .topbar button.active{
   border-color:var(--accent);
   background:linear-gradient(135deg,var(--card),rgba(124,92,255,0.1));
-  box-shadow:0 0 12px rgba(124,92,255,0.3);
+  box-shadow:0 2px 12px rgba(124,92,255,0.4);
+}
+.topbar button.active:hover{
+  box-shadow:0 2px 16px rgba(124,92,255,0.6);
 }
 .topbar button:active{
   transform:translateY(0);
@@ -680,7 +683,6 @@ button.primary.recording{
   cursor:pointer;
   z-index:10000;
   transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
-  box-shadow:-4px 2px 12px rgba(124,92,255,0.4);
   display:flex;
   align-items:center;
   justify-content:flex-start;
@@ -698,7 +700,6 @@ button.primary.recording{
 .settingsHandle:hover{
   right:-24px;
   background:linear-gradient(135deg,rgba(124,92,255,1),rgba(124,92,255,0.85));
-  box-shadow:-6px 2px 16px rgba(124,92,255,0.6);
 }
 
 @keyframes handleRotate{
@@ -720,9 +721,7 @@ body.paused .settingsHandle::before{
   transform:translateX(100%);
   transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
   z-index:9999;
-  overflow-y:auto;
-  padding:24px;
-  padding-top:70px;
+  overflow:hidden;
 }
 
 .settingsPanel.open{
@@ -737,6 +736,15 @@ body.paused .settingsHandle::before{
   width:100%;
   height:4px;
   background:linear-gradient(90deg,rgba(124,92,255,0.3),var(--accent),rgba(124,92,255,0.3));
+  z-index:20;
+}
+
+.settingsContent{
+  height:100%;
+  overflow-y:auto;
+  padding:70px 24px 24px 24px;
+  position:relative;
+  z-index:1;
 }
 
 .page{
@@ -797,8 +805,16 @@ body.paused .settingsHandle::before{
 }
 
 /* currency selector */
+/* Unified purple glow utility */
+.purple-glow{
+  box-shadow:-4px 2px 12px rgba(124,92,255,0.4);
+}
+.purple-glow:hover{
+  box-shadow:-6px 2px 16px rgba(124,92,255,0.6);
+}
+
 .currencySelector{
-  position:fixed;
+  position:absolute;
   top:0;
   left:0;
   right:0;
@@ -807,7 +823,8 @@ body.paused .settingsHandle::before{
   display:none;
   align-items:flex-end;
   justify-content:center;
-  z-index:300;
+  z-index:10;
+  border-radius:0;
 }
 .currencySelector.show{
   display:flex;
@@ -817,7 +834,7 @@ body.paused .settingsHandle::before{
   border-radius:20px 20px 0 0;
   padding:20px;
   width:100%;
-  max-width:520px;
+  max-width:100%;
   height:70vh;
   display:flex;
   flex-direction:column;
@@ -925,19 +942,20 @@ body.paused .settingsHandle::before{
 </head>
 
 <body>
-<div class="version">v2.7.0</div>
+<div class="version">v2.8.0</div>
 
 <!-- Floating Settings Handle -->
 <div class="settingsHandle" id="settingsHandle"></div>
 
 <!-- Settings Slide-in Panel -->
 <div class="settingsPanel" id="settingsPanel">
-  <div class="settingsHeader">
-    <button class="closeSettingsBtn" id="closeSettings">✕</button>
-    <h2 id="settingsTitle">Settings</h2>
-  </div>
+  <div class="settingsContent">
+    <div class="settingsHeader">
+      <button class="closeSettingsBtn" id="closeSettings">✕</button>
+      <h2 id="settingsTitle">Settings</h2>
+    </div>
 
-  <div class="settingItem">
+    <div class="settingItem">
     <div class="settingLabel" id="langLabel">Language</div>
     <select id="langSelect">
       <option value="en">English</option>
@@ -958,12 +976,22 @@ body.paused .settingsHandle::before{
     </select>
   </div>
 
-  <div class="settingItem">
-    <div class="settingLabel" id="currencyLabel">Currency</div>
-    <button id="currencyBtn">
-      <span id="selectedCurrency">USD – US Dollar</span>
-      <span>▼</span>
-    </button>
+    <div class="settingItem">
+      <div class="settingLabel" id="currencyLabel">Currency</div>
+      <button id="currencyBtn">
+        <span id="selectedCurrency">USD – US Dollar</span>
+        <span>▼</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Currency Selector (inside settings panel) -->
+  <div id="currencySelector" class="currencySelector">
+    <div class="currencyPanel">
+      <h3 id="currencySelectorTitle">Select Currency</h3>
+      <input type="text" id="currencySearch" class="currencySearch" placeholder="Search currency...">
+      <div class="currencyList" id="currencyList"></div>
+    </div>
   </div>
 </div>
 
@@ -1044,14 +1072,6 @@ body.paused .settingsHandle::before{
       <h2 id="chartTitle">Analytics</h2>
     </div>
     <div id="chartContainer"></div>
-  </div>
-</div>
-
-<div id="currencySelector" class="currencySelector">
-  <div class="currencyPanel">
-    <h3 id="currencySelectorTitle">Select Currency</h3>
-    <input type="text" id="currencySearch" class="currencySearch" placeholder="Search currency...">
-    <div class="currencyList" id="currencyList"></div>
   </div>
 </div>
 
