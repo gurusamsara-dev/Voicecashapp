@@ -58,37 +58,57 @@ body.paused .app::before{
   animation:none;
 }
 
-h1 .mic-icon{
-  display:inline-block;
-  animation:micPulse 2s ease-in-out infinite;
-  will-change:transform,filter;
+h1 .app-logo{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  animation:logoFloat 3s ease-in-out infinite;
+  will-change:transform;
+  font-size:28px;
+  position:relative;
 }
 
-body.paused h1 .mic-icon{
+h1 .app-logo::after{
+  content:'';
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(124,92,255,0.2),transparent 70%);
+  z-index:-1;
+  animation:logoPulse 2s ease-in-out infinite;
+}
+
+body.paused h1 .app-logo{
   animation:none;
-  filter:drop-shadow(0 0 2px rgba(124,92,255,0.3));
+}
+
+body.paused h1 .app-logo::after{
+  animation:none;
+}
+
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-3px) rotate(2deg)}
+}
+
+@keyframes logoPulse{
+  0%,100%{opacity:0.3;transform:scale(1)}
+  50%{opacity:0.6;transform:scale(1.1)}
 }
 
 #recBtn{
   position:relative;
   overflow:visible;
+  transition:all 0.3s ease;
 }
 
-#recBtn::before{
-  content:'🎤';
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  font-size:18px;
-  pointer-events:none;
-  animation:micPulse 2s ease-in-out infinite;
-  will-change:transform,filter;
+#recBtn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(124,92,255,0.3);
 }
 
-body.paused #recBtn::before{
-  animation:none;
-  filter:drop-shadow(0 0 2px rgba(124,92,255,0.3));
+#recBtn:active{
+  transform:translateY(0);
 }
 
 /* top buttons */
@@ -104,9 +124,21 @@ body.paused #recBtn::before{
   background:var(--card);
   color:var(--text);
   border:1px solid rgba(255,255,255,.08);
+  transition:all 0.3s ease;
+  cursor:pointer;
+}
+.topbar button:hover{
+  transform:translateY(-2px);
+  border-color:rgba(124,92,255,0.4);
+  box-shadow:0 4px 8px rgba(0,0,0,0.2);
 }
 .topbar button.active{
   border-color:var(--accent);
+  background:linear-gradient(135deg,var(--card),rgba(124,92,255,0.1));
+  box-shadow:0 0 12px rgba(124,92,255,0.3);
+}
+.topbar button:active{
+  transform:translateY(0);
 }
 
 /* summary */
@@ -120,15 +152,53 @@ body.paused #recBtn::before{
   background:var(--card);
   border-radius:14px;
   padding:12px;
+  transition:all 0.3s ease;
+  animation:cardFadeIn 0.5s ease-out backwards;
+  position:relative;
+  overflow:hidden;
+}
+.card:nth-child(1){animation-delay:0.1s}
+.card:nth-child(2){animation-delay:0.2s}
+.card:nth-child(3){animation-delay:0.3s}
+.card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,transparent,rgba(124,92,255,0.05));
+  opacity:0;
+  transition:opacity 0.3s ease;
+}
+.card:hover{
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:0 8px 16px rgba(124,92,255,0.2);
+}
+.card:hover::before{
+  opacity:1;
 }
 .card .label{
   color:var(--muted);
   font-size:13px;
+  position:relative;
+  z-index:1;
 }
 .card .value{
   color:var(--accent);
   font-size:20px;
   margin-top:6px;
+  position:relative;
+  z-index:1;
+  font-weight:600;
+}
+
+@keyframes cardFadeIn{
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
 }
 
 /* voice */
@@ -234,6 +304,7 @@ button.primary.recording{
   background:rgba(255,255,255,0.05);
   border-radius:12px;
   padding:4px;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);
 }
 .viewToggleBtn{
   flex:1;
@@ -245,14 +316,33 @@ button.primary.recording{
   font-weight:500;
   border-radius:8px;
   cursor:pointer;
-  transition:all 0.2s;
+  transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  position:relative;
+}
+.viewToggleBtn::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:8px;
+  background:var(--accent);
+  opacity:0;
+  transform:scale(0.9);
+  transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  z-index:-1;
+}
+.viewToggleBtn.active::after{
+  opacity:1;
+  transform:scale(1);
 }
 .viewToggleBtn.active{
-  background:var(--accent);
   color:var(--bg);
+  transform:scale(1.02);
+  font-weight:600;
 }
 .viewToggleBtn:hover:not(.active){
   color:var(--text);
+  background:rgba(255,255,255,0.05);
+  transform:scale(1.02);
 }
 
 /* records */
@@ -264,11 +354,24 @@ button.primary.recording{
   display:flex;
   align-items:center;
   gap:10px;
+  transition:all 0.3s ease;
+  border:1px solid transparent;
+  animation:recordFadeIn 0.4s ease-out backwards;
+}
+.record:hover{
+  transform:translateX(4px);
+  border-color:rgba(124,92,255,0.3);
+  background:linear-gradient(90deg,var(--card),rgba(124,92,255,0.05));
+  box-shadow:0 2px 8px rgba(124,92,255,0.15);
 }
 .icon{
   font-size:22px;
   width:28px;
   text-align:center;
+  transition:transform 0.3s ease;
+}
+.record:hover .icon{
+  transform:scale(1.15) rotate(5deg);
 }
 .recMain{
   flex:1;
@@ -287,6 +390,11 @@ button.primary.recording{
 }
 .amount{
   font-size:16px;
+  font-weight:600;
+  transition:color 0.3s ease;
+}
+.record:hover .amount{
+  color:var(--accent);
 }
 .menuBtn{
   background:transparent;
@@ -294,6 +402,24 @@ button.primary.recording{
   color:var(--muted);
   font-size:20px;
   cursor:pointer;
+  transition:all 0.3s ease;
+  opacity:0.6;
+}
+.menuBtn:hover{
+  transform:scale(1.2);
+  opacity:1;
+  color:var(--accent);
+}
+
+@keyframes recordFadeIn{
+  from{
+    opacity:0;
+    transform:translateX(-10px);
+  }
+  to{
+    opacity:1;
+    transform:translateX(0);
+  }
 }
 
 /* modal & overlay */
@@ -760,12 +886,12 @@ button.primary.recording{
 </head>
 
 <body>
-<div class="version">v2.4.0</div>
+<div class="version">v2.5.0</div>
 <button class="settingsBtn" id="settingsBtn">⚙️</button>
 
 <div id="mainPage" class="page active">
   <div class="app">
-    <h1 id="appTitle"><span class="mic-icon">💸</span> Voice Cash</h1>
+    <h1 id="appTitle"><span class="app-logo">💰🔊</span> Voice Cash</h1>
 
     <div class="topbar">
       <button class="active" id="todayBtn">Траты за день</button>
