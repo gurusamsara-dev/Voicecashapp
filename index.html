@@ -1071,7 +1071,7 @@ body.paused .settingsHandle::before{
 .version{
   position:fixed;
   top:8px;
-  left:8px;
+  right:8px;
   font-size:10px;
   color:var(--muted);
   opacity:0.6;
@@ -1083,7 +1083,7 @@ body.paused .settingsHandle::before{
 </head>
 
 <body>
-<div class="version">v2.12.0</div>
+<div class="version">v2.13.0</div>
 
 <!-- Floating Settings Handle -->
 <div class="settingsHandle" id="settingsHandle"></div>
@@ -1300,12 +1300,132 @@ function getCurrencyDisplay(){
 
 // Category system - structured like file-based data
 const CATEGORIES={
+  fruits:{
+    id:'fruits',
+    name:'Fruits',
+    emoji:'🍎',
+    color:'#FF6B6B',
+    keywords:['фрукты','яблоко','банан','апельсин','груша','виноград','клубника','киви','манго','ананас','арбуз','дыня','персик','слива','вишня','черешня','лимон','грейпфрут','мандарин','fruits','apple','banana','orange','pear','grapes','strawberry','kiwi','mango','pineapple','watermelon','melon','peach','plum','cherry','lemon','grapefruit','tangerine','berries','blueberry','raspberry'],
+    aliases:[]
+  },
+  vegetables:{
+    id:'vegetables',
+    name:'Vegetables',
+    emoji:'🥕',
+    color:'#FF8C42',
+    keywords:['овощи','морковь','картофель','лук','чеснок','помидор','огурец','перец','капуста','брокколи','цветная капуста','кабачок','баклажан','салат','шпинат','зелень','петрушка','укроп','vegetables','carrot','potato','onion','garlic','tomato','cucumber','pepper','cabbage','broccoli','cauliflower','zucchini','eggplant','lettuce','spinach','greens','parsley','dill','celery','corn','peas'],
+    aliases:[]
+  },
+  meat:{
+    id:'meat',
+    name:'Meat & Poultry',
+    emoji:'🥩',
+    color:'#D94A3D',
+    keywords:['мясо','говядина','свинина','курица','индейка','утка','баранина','фарш','стейк','котлеты','сосиски','колбаса','бекон','ветчина','meat','beef','pork','chicken','turkey','duck','lamb','ground meat','steak','sausage','bacon','ham','ribs','wings'],
+    aliases:[]
+  },
+  seafood:{
+    id:'seafood',
+    name:'Fish & Seafood',
+    emoji:'🐟',
+    color:'#4A90E2',
+    keywords:['рыба','морепродукты','лосось','тунец','треска','семга','креветки','кальмар','мидии','краб','икра','fish','seafood','salmon','tuna','cod','shrimp','prawns','squid','mussels','crab','caviar','lobster','oysters','tilapia'],
+    aliases:[]
+  },
+  dairy:{
+    id:'dairy',
+    name:'Dairy & Eggs',
+    emoji:'🥛',
+    color:'#F5E6D3',
+    keywords:['молоко','молочные','сыр','творог','сметана','йогурт','кефир','масло','сливки','яйца','dairy','milk','cheese','cottage cheese','sour cream','yogurt','kefir','butter','cream','eggs','cheddar','mozzarella','parmesan','cream cheese'],
+    aliases:[]
+  },
+  bakery:{
+    id:'bakery',
+    name:'Bread & Bakery',
+    emoji:'🍞',
+    color:'#D4A574',
+    keywords:['хлеб','выпечка','булочка','батон','багет','круассан','пирог','торт','печенье','кекс','маффин','bread','bakery','baguette','croissant','bun','roll','pie','cake','cookies','muffin','pastry','donut','bagel'],
+    aliases:[]
+  },
+  beverages:{
+    id:'beverages',
+    name:'Beverages',
+    emoji:'🥤',
+    color:'#5DADE2',
+    keywords:['напитки','вода','сок','газировка','кола','пепси','спрайт','чай','кофе','энергетик','beverages','drinks','water','juice','soda','cola','pepsi','sprite','tea','coffee','energy drink','mineral water','sparkling water','lemonade','smoothie'],
+    aliases:['coca cola','red bull','monster']
+  },
+  snacks:{
+    id:'snacks',
+    name:'Snacks & Sweets',
+    emoji:'🍿',
+    color:'#F39C12',
+    keywords:['снеки','чипсы','попкорн','орехи','семечки','конфеты','шоколад','мармелад','жвачка','печенье','крекер','snacks','chips','popcorn','nuts','seeds','candy','chocolate','gummy','gum','crackers','pretzels','cookies','sweets','chocolate bar','m&m','mars','snickers','kit kat'],
+    aliases:[]
+  },
+  frozen:{
+    id:'frozen',
+    name:'Frozen Foods',
+    emoji:'🧊',
+    color:'#AED6F1',
+    keywords:['замороженные','мороженое','пельмени','вареники','блины','замороженные овощи','пицца замороженная','frozen','ice cream','dumplings','frozen vegetables','frozen pizza','frozen meals','nuggets','french fries','frozen berries'],
+    aliases:[]
+  },
+  canned:{
+    id:'canned',
+    name:'Canned & Preserved',
+    emoji:'🥫',
+    color:'#E59866',
+    keywords:['консервы','тушенка','рыбные консервы','томатная паста','соленья','маринованные','варенье','джем','canned','preserved','canned fish','canned meat','tomato paste','pickles','jam','marinated','olives','canned vegetables','canned beans','canned soup'],
+    aliases:[]
+  },
+  grains:{
+    id:'grains',
+    name:'Grains & Pasta',
+    emoji:'🌾',
+    color:'#F4D03F',
+    keywords:['крупы','рис','гречка','овсянка','макароны','спагетти','лапша','мука','хлопья','мюсли','grains','rice','buckwheat','oatmeal','oats','pasta','spaghetti','noodles','flour','cereal','muesli','quinoa','couscous','vermicelli'],
+    aliases:[]
+  },
+  condiments:{
+    id:'condiments',
+    name:'Sauces & Condiments',
+    emoji:'🧂',
+    color:'#CB4335',
+    keywords:['соусы','кетчуп','майонез','горчица','соевый соус','уксус','специи','соль','перец','приправы','масло','оливковое масло','condiments','ketchup','mayonnaise','mustard','soy sauce','vinegar','spices','salt','pepper','seasoning','oil','olive oil','hot sauce','bbq sauce','ranch'],
+    aliases:['heinz','tabasco']
+  },
+  household:{
+    id:'household',
+    name:'Household & Cleaning',
+    emoji:'🧹',
+    color:'#85C1E2',
+    keywords:['бытовая химия','моющее','порошок','мыло','шампунь','зубная паста','туалетная бумага','салфетки','губка','cleaning','detergent','soap','shampoo','toothpaste','toilet paper','tissues','sponge','bleach','dish soap','laundry detergent','paper towels','trash bags','disinfectant'],
+    aliases:['tide','fairy','domestos']
+  },
+  personalcare:{
+    id:'personalcare',
+    name:'Personal Care',
+    emoji:'🧴',
+    color:'#D7BDE2',
+    keywords:['косметика','крем','дезодорант','бритва','прокладки','личная гигиена','лосьон','гель для душа','personal care','cosmetics','cream','deodorant','razor','pads','hygiene','lotion','shower gel','body wash','shaving cream','face wash','moisturizer','sunscreen'],
+    aliases:[]
+  },
+  petfood:{
+    id:'petfood',
+    name:'Pet Food & Supplies',
+    emoji:'🐾',
+    color:'#A569BD',
+    keywords:['корм для животных','корм для кошек','корм для собак','наполнитель','pet food','cat food','dog food','pet supplies','litter','treats','pet treats'],
+    aliases:[]
+  },
   food:{
     id:'food',
-    name:'Food & Drinks',
+    name:'Restaurant & Takeout',
     emoji:'🍔',
-    color:'#FF6B6B',
-    keywords:['кофе','латте','капучино','еда','пицца','шаурма','ресторан','бургер','макдональдс','кфс','старбакс','кафе','обед','ужин','завтрак','перекус','продукты','grocery','coffee','food','pizza','burger','restaurant','lunch','dinner','breakfast'],
+    color:'#E74C3C',
+    keywords:['кофе','латте','капучино','ресторан','бургер','макдональдс','кфс','старбакс','кафе','обед','ужин','завтрак','перекус','доставка еды','pizza','burger','restaurant','lunch','dinner','breakfast','takeout','delivery','fast food'],
     aliases:['starbucks','mcdonalds','kfc','dunkin','subway','burger king']
   },
   transport:{
