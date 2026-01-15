@@ -437,6 +437,33 @@ button.primary.recording{
   color:var(--accent);
 }
 
+/* record action icons (Month view) */
+.recordActions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.recordActionIcon{
+  background:transparent;
+  border:none;
+  font-size:20px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:8px;
+  transition:all 0.2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.recordActionIcon:hover{
+  background:rgba(255,255,255,0.1);
+  transform:scale(1.1);
+}
+.recordActionIcon.delete{
+  color:var(--danger);
+}
+.recordActionIcon.edit{
+  color:var(--accent);
+}
+
 /* modal & overlay */
 .overlay{
   position:fixed;
@@ -555,6 +582,63 @@ button.primary.recording{
   color:#fff;
 }
 .formActions .btnCancel{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+/* confirm modal */
+.confirmModal{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:300;
+}
+.confirmModal.show{
+  display:flex;
+}
+.confirmBox{
+  background:var(--card);
+  border-radius:20px;
+  padding:24px;
+  width:90%;
+  max-width:360px;
+  text-align:center;
+}
+.confirmBox h3{
+  margin:0 0 12px;
+  font-size:18px;
+  color:var(--text);
+}
+.confirmBox p{
+  margin:0 0 24px;
+  color:var(--muted);
+  font-size:14px;
+}
+.confirmActions{
+  display:flex;
+  gap:10px;
+}
+.confirmActions button{
+  flex:1;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  font-size:15px;
+  cursor:pointer;
+  font-weight:600;
+}
+.confirmActions .btnConfirm{
+  background:var(--danger);
+  color:#fff;
+}
+.confirmActions .btnCancelConfirm{
   background:transparent;
   color:var(--muted);
   border:1px solid rgba(255,255,255,0.1);
@@ -1103,6 +1187,17 @@ body.paused .settingsHandle::before{
   </div>
 </div>
 
+<div id="confirmModal" class="confirmModal">
+  <div class="confirmBox">
+    <h3>Delete Expense?</h3>
+    <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
+    <div class="confirmActions">
+      <button class="btnCancelConfirm" id="cancelDelete">Cancel</button>
+      <button class="btnConfirm" id="confirmDelete">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
 <div id="chartPanel" class="editPanel">
   <div class="editForm chartView">
     <div class="settingsHeader">
@@ -1552,6 +1647,35 @@ function deleteRecord(){
  }
 }
 
+// Delete confirmation modal functions
+const confirmModal=document.getElementById('confirmModal');
+
+function showDeleteConfirmation(){
+ confirmModal.classList.add('show');
+}
+
+function hideDeleteConfirmation(){
+ confirmModal.classList.remove('show');
+}
+
+function confirmDeleteRecord(){
+ records=records.filter(r=>r.id!==currentRecordId);
+ localStorage.setItem(KEY,JSON.stringify(records));
+ hideDeleteConfirmation();
+
+ // Refresh the month view if we're in a month detail view
+ if(currentMonthPrefix){
+  showExpensesForMonth(currentMonthPrefix);
+ }else if(currentChartType && selectedPeriod){
+  if(currentChartType==='month') showMonthChart();
+  else if(currentChartType==='year') showYearChart();
+ }else{
+  render();
+ }
+
+ currentRecordId=null;
+}
+
 function openEditPanel(){
  const record=records.find(r=>r.id===currentRecordId);
  if(!record){
@@ -1645,7 +1769,9 @@ function saveEdit(){
  closeEditPanel();
 
  // Refresh view
- if(currentChartType && selectedPeriod){
+ if(currentMonthPrefix){
+  showExpensesForMonth(currentMonthPrefix);
+ }else if(currentChartType && selectedPeriod){
   if(currentChartType==='month') showMonthChart();
   else if(currentChartType==='year') showYearChart();
  }else{
@@ -1674,6 +1800,13 @@ document.getElementById('saveEdit').onclick=(e)=>{
  saveEdit();
 };
 
+// Confirmation modal event listeners
+document.getElementById('cancelDelete').onclick=hideDeleteConfirmation;
+document.getElementById('confirmDelete').onclick=confirmDeleteRecord;
+confirmModal.onclick=(e)=>{
+ if(e.target===confirmModal) hideDeleteConfirmation();
+};
+
 // charts
 const chartPanel=document.getElementById('chartPanel');
 let currentChartType=null;
@@ -1682,6 +1815,7 @@ let displayedYear=new Date().getFullYear();
 let displayedMonth=new Date().getMonth();
 let currentMonthlyView='expenses';
 let currentYearlyView='expenses';
+let currentMonthPrefix=null;
 
 function openChart(type){
  currentChartType=type;
@@ -2376,7 +2510,10 @@ function showExpensesForMonth(monthPrefix){
      </div>
      <div class="recRight">
       <div class="amount">${formatAmount(r.amount)}</div>
-      <button class="menuBtn" data-id="${r.id}">⋮</button>
+      <div class="recordActions">
+       <button class="recordActionIcon edit" data-id="${r.id}" title="Edit">✏️</button>
+       <button class="recordActionIcon delete" data-id="${r.id}" title="Delete">❌</button>
+      </div>
      </div>
     </div>`;
   });
@@ -2384,10 +2521,22 @@ function showExpensesForMonth(monthPrefix){
 
  container.innerHTML=html;
 
- container.querySelectorAll('.menuBtn').forEach(btn=>{
-  btn.onclick=()=>{
+ // Attach edit and delete handlers
+ container.querySelectorAll('.recordActionIcon.edit').forEach(btn=>{
+  btn.onclick=(e)=>{
+   e.stopPropagation();
    currentRecordId=btn.dataset.id;
-   actionOverlay.classList.add('show');
+   currentMonthPrefix=monthPrefix;
+   openEditPanel();
+  };
+ });
+
+ container.querySelectorAll('.recordActionIcon.delete').forEach(btn=>{
+  btn.onclick=(e)=>{
+   e.stopPropagation();
+   currentRecordId=btn.dataset.id;
+   currentMonthPrefix=monthPrefix;
+   showDeleteConfirmation();
   };
  });
 }
