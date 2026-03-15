@@ -313,7 +313,7 @@ class MasterPasswordDialog(QDialog):
         self.is_new_vault = is_new_vault
         self._password: str = ""
         self.setWindowTitle("SecureVault — Authentication")
-        self.setFixedSize(400, is_new_vault and 330 or 250)
+        self.setFixedSize(400, 330 if is_new_vault else 250)
         self.setModal(True)
         self._build_ui()
 
